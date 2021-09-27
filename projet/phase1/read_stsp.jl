@@ -217,8 +217,8 @@ function plot_graph(nodes, edges)
 
   # edge positions
   for k = 1 : length(edges)
-    for j in edges[k]
-      plot!([nodes[k][1], nodes[j][1]], [nodes[k][2], nodes[j][2]],
+    for couple in edges[k] #Maintenant edges[k] est une liste de couples constitué du sommet "d'arrivée" et du poids de l'arête
+      plot!([nodes[k][1], nodes[couple[1]][1]], [nodes[k][2], nodes[couple[1]][2]],
           linewidth=1.5, alpha=0.75, color=:lightgray)
     end
   end
