@@ -1,5 +1,5 @@
 import Base.show
-
+using Test
 """Type abstrait dont d'autres types de graphes dériveront."""
 abstract type AbstractGraph{T} end
 
@@ -22,20 +22,39 @@ end
 
 """Ajoute un noeud au graphe."""
 function add_node!(graph::Graph{T}, node::Node{T}) where T
+  for noeud in graph.nodes
+    @test noeud.name != node.name
+  end
   push!(graph.nodes, node)
   graph
 end
 
 """Ajoute une arete au graphe. """
 function add_edge!(graph::Graph, edge:: Edge) 
-  push!(graph.edges, edge)
+  if poids(edge) != 0
+    @test edge.sommet1 != edge.sommet2
+    push!(graph.edges, edge)
+  end
   graph
 end
+""" Prend en argument un vecteur de noeuds et une arête et renvoie le couple des 2 noeuds dont les noms sont donnés dans l'arête"""
+function find_nodes(nodes::Vector{Node{T}},edge ::Edge) where T
+  sommet1, sommet2 = sommets(edge)
+  lis_noeuds = Node{T}[]
+  for node in nodes
+    if node.name == sommet1 || node.name == sommet2
+      push!(lis_noeuds, node)
+    end
+  end
+  @test length(lis_noeuds)==2
+  if lis_noeuds[1].name == sommet2
+    return [lis_noeuds[2], lis_noeuds[1]]
+  else
+    return lis_noeuds
+  end
 
+end
 
-
-# on présume que tous les graphes dérivant d'AbstractGraph
-# posséderont des champs `name` et `nodes`.
 
 """Renvoie le nom du graphe."""
 name(graph::AbstractGraph) = graph.name

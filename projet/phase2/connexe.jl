@@ -12,8 +12,8 @@ end
 
 """Ajoute un noeud au sous-graphe."""
 function add_node!(connex::Connex{T}, node::Node{T}) where T
- push!(connex.nodes, node)
-    connex
+  push!(connex.nodes, node)
+  connex
 end
 
 
@@ -35,8 +35,11 @@ function show(connex::Connex)
     end
 end
 
-function merge(connex1:: Connex, connex2:: Connex)
-  nodes_fusionne = append!(connex1.nodes,connex2.nodes)
-  connex_fusionne = Connex(nodes_fusionne)
-  connex_fusionne
+function merge!(connex1:: Connex, connex2:: Connex)
+  n = nb_nodes(connex1)
+  append!(connex1.nodes,connex2.nodes)
+
+  @test nb_nodes(connex1) == n+nb_nodes(connex2)
+
+  connex1
 end

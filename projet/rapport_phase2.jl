@@ -12,10 +12,8 @@ using Markdown
 using InteractiveUtils
 end
 
-# ╔═╡ 8349ba2b-6f7a-4ebc-a39a-73936e6ab582
-begin
-	include("/Users/admin/Documents/PhD Courses/MT6412B/Projet/mth6412b-starter-code/projet/phase2/main2.jl")
-end
+# ╔═╡ 52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
+include("phase2\\kruskal.jl")
 
 # ╔═╡ bd96c780-678d-459b-aa23-a166751da087
 md"# Ecole polytechnique de Montréal"
@@ -33,44 +31,115 @@ md" ### Pierre Mordant & Mahamadou Sarité"
 md"### Phase 2"
 
 # ╔═╡ 4c380476-c375-4da3-a58e-acdb303d3a76
-md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/phase2/projet/phase2)"
+md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/phase2)"
 
 # ╔═╡ f345a0a0-2342-4488-ac0a-7b3c4f5fe381
 begin
 md" Dans cette deuxième phase du projet sur le problème du voyageur de commerce symétrique, nous définissons des structures de données de base adéquates.
-Nous procédons à des modifications des codes de démarrages et à proposer:
+Nous procédons à des modifications des codes de démarrages et nous proposons:
   1. Un type Connex pour présenter les sous-graphes de poids de ses arêtes non nuls à partir d'un graphe non orienté.
-  2. Implémenter l'algorithme de Kruskal.
-  3. Accompagner notre code de tests  unitaires.
-  4. Tester notre implémentation sur diverses  instances de TSP dans un programme principal et commenter."
+  2. Une implémentation de l'algorithme de Kruskal.
+  3. Des tests unitaires pour accompagner notre code.
+  4. Un test de notre implémentation sur les  instances de TSP dans le programme main."
 end
 
-# ╔═╡ a7d918f3-2de0-46fc-95c9-c83af071d1cb
-md" Le programme principal main2.jl crée un graphe à partir d'une instance TSP à l'aide de la fonction create _ sub _ graph(filename) et  trie les arêtes par ordre croissant des poids non nuls pour donner les composantes connexes. Par ailleurs, ce programme principal fait appel aux codes node.jl, edge.jl, read _ stsp.jl, graph.jl, connexe.jl et kruskal.jl "
+# ╔═╡ d7c42946-efe0-4973-b9e6-8cb82e66c703
+md"Tout d'abord nous avons voulu corriger quelques erreurs de notre phase 1 : nous avons ainsi modifié notre fonction create\_graph pour qu'elle ne prenne en compte qu'une fois les arêtes d'un sommet fixé à un autre. Nous avons aussi empêché l'ajout d'arêtes de poids nul."
 
-# ╔═╡ 9e831848-13de-4010-b7a6-4fd0f7fd08d0
-md" Exemple sur quelques instances:"
+# ╔═╡ 221f80e9-921f-423a-abdd-148a17e97100
+md"En parallèle, nous avons aussi modifié notre fonction pour qu'elle prenne en compte les fichiers comme brazil58.tsp ou gr17.tsp qui ne donnaient pas de valeurs pour représenter ses noeuds et donc qui n'étaient pas pris en compte par la fonction create_nodes. Maintenant la liste des noeuds est correctement créée"
 
-# ╔═╡ 06e2499a-2fda-405a-ad4b-dbe8ae94d08d
-md" ###### bays29.tsp : "
+# ╔═╡ ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
+md"Nous avons rajouté des tests unitaires dans cette fonction, vérifiant surtout que le nombre d'arêtes n'excède pas le nombre maximal fixé par le nombre de noeuds (ce qui permet de vérifier en même temps que le nombre de noeuds n'est pas nul)."
 
-# ╔═╡ bf00b89c-195c-4481-a70e-d3cd72773ecf
-create_sub_graph("/Users/admin/Documents/PhD Courses/MT6412B/Projet/mth6412b-starter-code/projet/instances/stsp/bays29.tsp")
+# ╔═╡ 46df5d63-a08b-44f9-ba6c-70e964b1e95b
+create_graph("instances\\stsp\\brazil58.tsp")
 
-# ╔═╡ 33637ffb-a8cb-438c-b793-67caeadbb6e3
-md" ###### bayg29.tsp :  "
+# ╔═╡ 6e828363-b538-4ac9-8c93-6a3f3f4f65cd
+create_graph("instances\\stsp\\gr17.tsp")
 
-# ╔═╡ 75a5cca1-c364-4bd3-b084-b233be70ffd5
-create_sub_graph("/Users/admin/Documents/PhD Courses/MT6412B/Projet/mth6412b-starter-code/projet/instances/stsp/bayg29.tsp")
+# ╔═╡ b89ce040-d9f8-4b93-9fad-058eb8675e39
+md"Nous avons aussi modifié la fonction plot_graph pour qu'elle marche correctement tant qu'on rentre un vecteur de nodes avec un couple de flottants en données et un ensemble d'arêtes."
 
-# ╔═╡ 7d24c6b3-bf6d-4563-8bc8-e127a6586621
-md" L'algorithme de Kruskal est appelé sur le sous-graphe de composantes connexes pour donner l'arbre de récouvrement minimal. "
+# ╔═╡ 0b9500da-4a9a-4d90-a11a-c097d92a62c1
+plot_graph("instances\\stsp\\bayg29.tsp")
 
-# ╔═╡ b22444b5-5ffe-417d-9870-a0564cd4c1f8
-kruskal("/Users/admin/Documents/PhD Courses/MT6412B/Projet/mth6412b-starter-code/projet/instances/stsp/bayg29.tsp")
+# ╔═╡ 5d6ab8f7-dbf9-4cc5-b012-3e72776841b3
+plot_graph([Node{Vector{Float64}}("1",[1.5,1.]), Node{Vector{Float64}}("2", [1.,2.]), Node{Vector{Float64}}("3", [2,2])], [Edge("1","2",1), Edge("1","3",1)])
 
-# ╔═╡ 06ee6dda-957b-4bc4-b643-493d18fafcc9
-plot_graph("/Users/admin/Documents/PhD Courses/MT6412B/Projet/mth6412b-starter-code/projet/instances/stsp/dantzig42.tsp")
+# ╔═╡ 93af53db-16b5-40e7-864e-2c9f19880aaa
+md"Finalement, nous avons aussi ajouté un tri par poids croissant des arêtes dans la fonction create\_graph. Celui-ci nous sera utile pour l'algorithme de Kruskal."
+
+# ╔═╡ e8565d7a-dc39-4b57-b852-f4f03d505dd5
+md"Nous avons fait le choix de représenter nos composantes connexes par un tableau de Nodes. Ainsi, on supposera que tous les noeuds qui sont dans ce tableau seront dans la même composante connexe. On implémente quelques fonctions de base, et  une fonction merge qui prend en argument 2 composantes connexes et qui renvoie la concaténation des 2. On joint des exemples ci-dessous."
+
+# ╔═╡ be97c69c-547f-4878-8694-f96e96d7431c
+connex = Connex([Node("1",[]), Node("2",[])])
+
+# ╔═╡ d0e478d2-4d35-4faa-8d5c-ec444c7f0e91
+add_node!(connex, Node("3",[]))
+
+# ╔═╡ f138fb6b-a669-47fe-b9dd-c868ab0a1bc0
+nb_nodes(connex)
+
+# ╔═╡ 54c75ba9-c1eb-4a39-972f-39354a17987d
+connex2 =  Connex([Node("4",[]), Node("5",[])])
+
+# ╔═╡ 3f8bd86e-52a2-4920-b5f6-b5eb0cc019bb
+merge!(connex, connex2)
+
+# ╔═╡ f9ede19c-5993-49c2-b78d-6cfe651f48a6
+connex
+
+# ╔═╡ e7d4c976-727a-49c1-b570-0b80bac37224
+md"On a ensuite, dans le programme kruskal.jl, implémenté 2 fonctions qui nous seront utiles pour la suite : la fonction isinConnex qui cherche si un noeud appartient à une composante connexe donnée et une fonction find_connex! qui prend en argument une liste de composantes connexes et un noeud à trouver, et qui renvoit la composante connexe à laquelle appartient le noeud donné en la supprimant de la liste de composantes connexes.
+Pour ces 2 fonctions, on identifie comme égaux des noeuds seulement s'ils ont le même nom, on ne s'intéresse pas à la donnée derrière."
+
+# ╔═╡ 41c6e5c5-90cd-4feb-8db4-666c56b017ae
+connex3 = Connex([Node("1",[]), Node("2",[])])
+
+# ╔═╡ 25f7f0c7-201e-4eb9-853c-69278fda2622
+isinConnex(connex3, Node("1", []))
+
+# ╔═╡ 880b3437-6bb8-44a0-8a57-4d59de1c75e6
+isinConnex(connex3,Node("4",[]))
+
+# ╔═╡ dbf1f0c2-bdea-4f94-90bd-f1f88d20344d
+isinConnex(connex3, Node("1", [1.,1.]))
+
+# ╔═╡ 420966c2-5ffe-4abc-a68b-2238ec9db259
+connex4 = Connex([Node("3",[]), Node("4",[])])
+
+# ╔═╡ d4bba484-1aad-411c-bf5d-298fbe8c704b
+lis_connex = [connex3, connex4]
+
+# ╔═╡ c9491f4c-f89e-474f-a76e-6b0d52c2050a
+find_connex!(lis_connex, Node("3", []))
+
+# ╔═╡ 07e45e8d-d705-44e0-bb24-7fb2f7f2f05d
+lis_connex
+
+# ╔═╡ ece014aa-5af7-447b-90d3-726bc58a0502
+md"Nous avons ensuite implémenté l'algorithme de Kruskal. Nous avons fait le choix de lui faire prendre en argument directement le nom du fichier stsp, mais il ne serait pas difficile de le modifier pour lui faire prendre en argument un graphe quelconque. Il faudrait faire attention à trier ses arêtes par ordre croissant, puisqu'ici cela est fait dans la fonction create\_graph qui ne serait alors plus utilisée. Tout d'abord, nous initialisons la liste des composantes connexes comme une liste de n composantes connexes contenant un unique sommet et la liste d'arêtes à garder comme une liste vide. A chaque itération, et tant qu'il reste plus de 2 composantes connexes distinctes, nous retirons l'arête de coût le plus faible, vérifions si elle peut relier 2 composantes connexes distinctes, et si oui, nous l'ajoutons à la liste des arêtes à garder et nous fusionnons les 2 composantes connexes. Quand il ne reste plus qu'une composante connexe, le graphe créé est ainsi connexe et correspond à notre arbre de recouvrement minimal."
+
+# ╔═╡ 00352dd5-98ed-49ea-9dba-311e45a4467f
+graphe = kruskal("instances\\stsp\\bayg29.tsp")
+
+# ╔═╡ f058682d-a3b3-40dc-bda1-60a408d84a54
+plot_graph(graphe.nodes,graphe.edges)
+
+# ╔═╡ cfd66aa4-bb17-4315-92e5-7a36f8ea89f0
+kruskal("instances\\stsp\\gr17.tsp")
+
+# ╔═╡ 812389aa-4961-4bc5-a4a3-c514ea1a98d7
+md"Nous avons rajouté quelques tests unitaires pour nous assurer du bon fonctionnement de notre code : nous vérifions entre autres
+* que l'arête en haut de la liste est bien de coût plus faible que la suivante ce qui garantit la croissance 'locale' de la liste.
+* que la liste des composantes connexes comporte toujours le bon nombre de noeuds à chaque itération.
+* qu'il ne reste bien qu'une seule composante connexe à la fin de l'algorithme.
+* que le nombre d'arêtes correspond bien au nombre de noeuds moins 1 à la fin de l'algorithme, ce qui permet de prouver que l'on a bien un arbre."
+
+# ╔═╡ 31436483-25d9-4a0d-87d4-19d1668460ed
+md"Nous avons finalement appelé la fonction kruskal sur toutes les instances stsp pour vérifier que tous les tests unitaires étaient passés dans le script main.jl. Comme la fonction create\_graph est appelée dans la fonction kruskal, on peut s'assurer que les tests unitaires de create\_graph sont aussi passés"
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -911,7 +980,8 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═3c04ef1e-26cf-11ec-269d-714e657e0a90
+# ╟─3c04ef1e-26cf-11ec-269d-714e657e0a90
+# ╟─52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
 # ╟─bd96c780-678d-459b-aa23-a166751da087
 # ╟─0c186ad3-5494-4fa5-9791-5c6a1fbc4fab
 # ╟─abc12fa3-0cdd-4c3f-8dc6-6fe41cde8ec9
@@ -919,15 +989,36 @@ version = "0.9.1+5"
 # ╟─8914a271-58db-45d0-a227-804ac9cdac5b
 # ╟─4c380476-c375-4da3-a58e-acdb303d3a76
 # ╟─f345a0a0-2342-4488-ac0a-7b3c4f5fe381
-# ╟─a7d918f3-2de0-46fc-95c9-c83af071d1cb
-# ╠═8349ba2b-6f7a-4ebc-a39a-73936e6ab582
-# ╟─9e831848-13de-4010-b7a6-4fd0f7fd08d0
-# ╟─06e2499a-2fda-405a-ad4b-dbe8ae94d08d
-# ╟─bf00b89c-195c-4481-a70e-d3cd72773ecf
-# ╟─33637ffb-a8cb-438c-b793-67caeadbb6e3
-# ╟─75a5cca1-c364-4bd3-b084-b233be70ffd5
-# ╠═7d24c6b3-bf6d-4563-8bc8-e127a6586621
-# ╟─b22444b5-5ffe-417d-9870-a0564cd4c1f8
-# ╠═06ee6dda-957b-4bc4-b643-493d18fafcc9
+# ╟─d7c42946-efe0-4973-b9e6-8cb82e66c703
+# ╟─221f80e9-921f-423a-abdd-148a17e97100
+# ╟─ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
+# ╠═46df5d63-a08b-44f9-ba6c-70e964b1e95b
+# ╠═6e828363-b538-4ac9-8c93-6a3f3f4f65cd
+# ╟─b89ce040-d9f8-4b93-9fad-058eb8675e39
+# ╠═0b9500da-4a9a-4d90-a11a-c097d92a62c1
+# ╠═5d6ab8f7-dbf9-4cc5-b012-3e72776841b3
+# ╟─93af53db-16b5-40e7-864e-2c9f19880aaa
+# ╟─e8565d7a-dc39-4b57-b852-f4f03d505dd5
+# ╠═be97c69c-547f-4878-8694-f96e96d7431c
+# ╠═d0e478d2-4d35-4faa-8d5c-ec444c7f0e91
+# ╠═f138fb6b-a669-47fe-b9dd-c868ab0a1bc0
+# ╠═54c75ba9-c1eb-4a39-972f-39354a17987d
+# ╠═3f8bd86e-52a2-4920-b5f6-b5eb0cc019bb
+# ╠═f9ede19c-5993-49c2-b78d-6cfe651f48a6
+# ╟─e7d4c976-727a-49c1-b570-0b80bac37224
+# ╠═41c6e5c5-90cd-4feb-8db4-666c56b017ae
+# ╠═25f7f0c7-201e-4eb9-853c-69278fda2622
+# ╠═880b3437-6bb8-44a0-8a57-4d59de1c75e6
+# ╠═dbf1f0c2-bdea-4f94-90bd-f1f88d20344d
+# ╠═420966c2-5ffe-4abc-a68b-2238ec9db259
+# ╠═d4bba484-1aad-411c-bf5d-298fbe8c704b
+# ╠═c9491f4c-f89e-474f-a76e-6b0d52c2050a
+# ╠═07e45e8d-d705-44e0-bb24-7fb2f7f2f05d
+# ╟─ece014aa-5af7-447b-90d3-726bc58a0502
+# ╠═00352dd5-98ed-49ea-9dba-311e45a4467f
+# ╠═f058682d-a3b3-40dc-bda1-60a408d84a54
+# ╠═cfd66aa4-bb17-4315-92e5-7a36f8ea89f0
+# ╟─812389aa-4961-4bc5-a4a3-c514ea1a98d7
+# ╟─31436483-25d9-4a0d-87d4-19d1668460ed
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

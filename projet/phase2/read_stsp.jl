@@ -204,38 +204,4 @@ function read_stsp(filename::String)
   return graph_nodes, graph_edges
 end
 
-"""Affiche un graphe étant données un ensemble de noeuds et d'arêtes.
 
-Exemple :
-
-    graph_nodes, graph_edges = read_stsp("bayg29.tsp")
-    plot_graph(graph_nodes, graph_edges)
-    savefig("bayg29.pdf")
-"""
-function plot_graph(nodes, edges)
-  fig = plot(legend=false)
-
-  # edge positions
-  for k = 1 : length(edges)
-      for couple in edges[k] #Maintenant edges[k] est une liste de couples constitué du sommet "d'arrivée" et du poids de l'arête
-        plot!([nodes[k][1], nodes[couple[1]][1]], [nodes[k][2], nodes[couple[1]][2]],
-          linewidth=1.5, alpha=0.75, color=:lightgray)
-    end
-  end
-
-  # node positions
-  xys = values(nodes)
-  x = [xy[1] for xy in xys]
-  y = [xy[2] for xy in xys]
-  scatter!(x, y)
-
-  fig
-end
-
-
-
-"""Fonction de commodité qui lit un fichier stsp et trace le graphe."""
-function plot_graph(filename::String)
-  graph_nodes, graph_edges = read_stsp(filename)
-  plot_graph(graph_nodes, graph_edges)
-end
