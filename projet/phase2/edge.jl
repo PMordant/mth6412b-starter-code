@@ -10,9 +10,9 @@ Exemple:
         arete = ("1", "2", 3) correspond à l'arete reliant le sommet nommé "1" et le sommet nommé "2", et de poids 3
 
 """
-mutable struct Edge <: AbstractEdge
-  sommet1::String
-  sommet2::String
+mutable struct Edge{T{} <: AbstractEdge[T]
+  sommet1::Node
+  sommet2::Node
   poids::Int
 end
 
