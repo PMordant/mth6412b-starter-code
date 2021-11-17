@@ -22,23 +22,6 @@ mutable struct Graph{T} <: AbstractGraph{T}
   edges::Vector{Edge{T}}
 end
 
-"""Ajoute un noeud au graphe."""
-function add_node!(graph::Graph{T}, node::Node{T}) where T
-  for noeud in graph.nodes
-    @test noeud.name != node.name
-  end
-  push!(graph.nodes, node)
-  graph
-end
-
-"""Ajoute une arete au graphe. """
-function add_edge!(graph::Graph{T}, edge:: Edge{T}) where T
-  if poids(edge) != 0
-    @test edge.sommet1 != edge.sommet2
-    push!(graph.edges, edge)
-  end
-  graph
-end
 
 
 " Prend en argument un vecteur de noeuds et une arête et renvoie le couple des 2 noeuds dont les noms sont donnés dans l'arête
@@ -50,7 +33,6 @@ function find_nodes(nodes::Vector{Node{T}},edge ::Edge) where T
       push!(lis_noeuds, node)
     end
   end
-  @test length(lis_noeuds)==2
   if lis_noeuds[1].name == sommet2
     return [lis_noeuds[2], lis_noeuds[1]]
   else
@@ -59,16 +41,6 @@ function find_nodes(nodes::Vector{Node{T}},edge ::Edge) where T
 
 end"
 
-
-function find_edges(node_name::String, graph::Graph{T}) where T
-  lis_aretes = Edge{T}[]
-  for edge in graph.edges
-    if edge.sommet1.name == node_name || edge.sommet2.name == node_name
-      push!(lis_aretes, edge)
-    end
-  end
-  lis_aretes
-end
 
 
 """Renvoie le nom du graphe."""
@@ -85,6 +57,32 @@ nb_nodes(graph::AbstractGraph) = length(graph.nodes)
 
 """ Renvoie le nombre d'arêtes du graphe. """
 nb_edges(graph::AbstractGraph) = length(graph.edges)
+
+"""Ajoute un noeud au graphe."""
+function add_node!(graph::Graph{T}, node::Node{T}) where T
+  push!(graph.nodes, node)
+  graph
+end
+
+"""Ajoute une arete au graphe. """
+function add_edge!(graph::Graph{T}, edge:: Edge{T}) where T
+  if poids(edge) != 0
+    push!(graph.edges, edge)
+  end
+  graph
+end
+
+
+function find_edges(node_name::String, graph::Graph{T}) where T
+  lis_aretes = Edge{T}[]
+  for edge in edges(graph)
+    if edge.sommet1.name == node_name || edge.sommet2.name == node_name
+      push!(lis_aretes, edge)
+    end
+  end
+  lis_aretes
+end
+
 
 """Affiche un graphe"""
 function show(graph::Graph)
@@ -110,8 +108,8 @@ function poids_total(graph::Graph)
 end
 
 function mat_adjacence(graphe::Graph)
-  lis_edges = graphe.edges
-  n = length(graphe.nodes)
+  lis_edges = edges(graphe)
+  n = length(nodes(graphe))
   mat_edges = Array{Any}(undef, n, n)
   for edge in lis_edges
     ind1 = parse(Int, edge.sommet1.name)

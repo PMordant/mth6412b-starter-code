@@ -1,6 +1,5 @@
 import Base.length, Base.push!, Base.popfirst!
 import Base.show
-using Test
 include("create_graph.jl")
 
 

@@ -38,22 +38,121 @@ function degrees(graph::Graph)
     d
 end
 
-function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int)
+function array_edge_tree(tree)
+    mat_edges = Dict{String,Any}()
+    for node in nodes(tree)
+        mat_edges[node.name] = []
+    end
+    for edge in edges(tree)
+        for sommet in sommets(edge)
+            push!(mat_edges[sommet.name], edge)
+        end
+    end
+    mat_edges
+
+end
+
+function tree_to_tour(mat_adjacence, tree, mat_tree)
+    d = degrees(tree)
+    if d.-2 == zeros(length(nodes(tree)))
+        tree
+    else
+        i_modif = "0"
+        for i = 1 : length(nodes(tree))
+            if d[i] == 1
+                i_modif = string(i)
+            end
+        end
+
+        sommet_prec = i_modif
+        derniere_edge = mat_tree[i_modif][1]
+        edge_suiv = derniere_edge
+        sommet_suiv = sommet_prec
+        for sommet in sommets(derniere_edge)
+            if sommet.name != sommet_prec
+                sommet_suiv = sommet.name
+            end
+        end
+
+        while d[parse(Int, sommet_suiv)] <= 2
+            for edge in mat_tree[sommet_suiv]
+
+                if (edge.sommet1.name, edge.sommet2.name) != (derniere_edge.sommet1.name, derniere_edge.sommet2.name)
+                    edge_suiv = edge
+                end
+            end
+            sommet_prec = sommet_suiv
+            for sommet in sommets(edge_suiv)
+                if sommet.name != sommet_prec
+                    sommet_suiv = sommet.name
+                end
+            end
+            derniere_edge = edge_suiv
+                
+
+            
+        end
+
+        poids_min = +Inf
+        edge_to_del = derniere_edge
+        edge_to_add = derniere_edge
+
+        for edge in mat_tree[sommet_suiv]
+            if (edge.sommet1.name, edge.sommet2.name) != (derniere_edge.sommet1.name, derniere_edge.sommet2.name)
+                autre_sommet = sommet_suiv
+                for sommet in sommets(edge)
+                    if sommet.name != sommet_suiv
+                        autre_sommet = sommet.name
+                    end
+                end
+                if poids(mat_adjacence[parse(Int, autre_sommet),parse(Int,i_modif)]) - poids(mat_adjacence[parse(Int, autre_sommet),parse(Int, sommet_suiv)]) <= poids_min
+                    edge_to_del = edge
+                    edge_to_add = mat_adjacence[parse(Int, autre_sommet),parse(Int,i_modif)]
+                end
+            end
+        end
+
+        for sommet in sommets(edge_to_del)
+            filter!(e -> e.sommet1.name != edge_to_del.sommet1.name || e.sommet2.name != edge_to_del.sommet2.name, mat_tree[sommet.name])
+        end
+        for sommet in sommets(edge_to_add)
+            push!(mat_tree[sommet.name],edge_to_add)
+        end
+
+
+        filter!(e -> e.sommet1.name != edge_to_del.sommet1.name || e.sommet2.name != edge_to_del.sommet2.name, edges(tree))
+        push!(edges(tree), edge_to_add)
+
+        tree_to_tour(mat_adjacence,tree,mat_tree)
+    end
+        
+    
+
+
+
+
+
+end
+
+
+
+
+function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, afficher::Bool)
     T = typeof(racine.data)
     k = 0
     Pi = zeros(length(graph.nodes))
     W = -Inf
     d = zeros(length(graph.nodes))
     v = d.-2
+    matrice_adjacence = mat_adjacence(graph)
     graph_modifie = Graph(graph.name,copy(graph.nodes),copy(graph.edges))
     min1_tree = min1tree(graph_modifie,racine)
     step_effectif = step_size
 
     while v != zeros(length(graph.nodes)) && k <= nb_iter
-        min_1tree = min1tree(graph_modifie,racine)
-        wk = poids_total(min_1tree) - 2*sum(Pi)
+        wk = poids_total(min1_tree) - 2*sum(Pi)
         W = max(W,wk)
-        d = degrees(min_1tree)
+        d = degrees(min1_tree)
         v = d.-2
         if k<= nb_iter/10
             step_effectif = 100*step_size
@@ -70,25 +169,41 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int)
         end
         graph_modifie= Graph(graph_modifie.name,graph_modifie.nodes,lis_edges)
         k += 1
-        if k%(nb_iter//10) == 0
+        if afficher && k%(nb_iter//10) == 0
             println(W)
         end
+        min1_tree = min1tree(graph_modifie,racine)
+
 
     end
-    min1_tree,W
+    println("Maximum obtenu pour w :"*string(W))
+    tour = tree_to_tour(matrice_adjacence, min1_tree,array_edge_tree(min1_tree))
+
+    lis_edges_reel = Edge{T}[]
+    for edge in edges(tour)
+        push!(lis_edges_reel, matrice_adjacence[parse(Int,edge.sommet1.name),parse(Int,edge.sommet2.name)])
+    end
+
+    tour_reel = Graph(tour.name,nodes(tour),lis_edges_reel)
+    tour_reel,poids_total(tour_reel)
 end
 
 function test_hk(graphe::Graph,step_size::Float64,nb_iter::Int)  
-    poids_max = -Inf
+    poids_min = Inf
     T = typeof(graphe.nodes[1].data)
-    graph_max = Graph("",Node{T}[],Edge{T}[])
+    graph_min = Graph("",Node{T}[],Edge{T}[])
+    node_min = nodes(graphe)[1]
 
-    for node in graphe.nodes
-        arbre,poids_arbre = heldkarp(graphe,node,step_size,nb_iter)
-        """if poids_arbre > poids_max
-            graph_max = arbre
-            poids_max = poids_arbre
-        end"""
+    for node in nodes(graphe)
+        arbre,poids_arbre = heldkarp(graphe,node,step_size,nb_iter, false)
+        if poids_arbre < poids_min
+            graph_min = arbre
+            poids_min = poids_arbre
+            node_min = node
+            println("Amélioré")
+        end
         println(node.name* " : "*string(poids_arbre))
     end
+
+    graph_min, poids_min, node_min
 end

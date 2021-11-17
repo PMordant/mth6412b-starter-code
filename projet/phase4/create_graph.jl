@@ -70,14 +70,10 @@ function create_graph(filename::String)
         end
     end 
 
-    @test length(triplets_edges) > 0
 
 
     sort!(triplets_edges, by = x -> x[3])                 # On trie les arêtes par ordre croissant de poids.
 
-    for i =1 : length(triplets_edges) - 1
-        @test triplets_edges[i][3] <= triplets_edges[i+1][3]
-    end
 
     lis_edges = Edge{T}[]
 
@@ -85,7 +81,6 @@ function create_graph(filename::String)
         push!(lis_edges, Edge(triplet[1], triplet[2], Float64(triplet[3])))
     end
 
-    @test length(lis_edges) <= length(lis_nodes) * (length(lis_nodes) -1 ) //2 #nombre max d'arêtes (atteint si aucune n'est de poids nul)
     Graph(filename,lis_nodes, lis_edges)
     
 

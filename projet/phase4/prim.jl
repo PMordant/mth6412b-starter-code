@@ -1,6 +1,5 @@
 import Base.length, Base.push!, Base.popfirst!
 import Base.show
-using Test
 include("kruskal.jl")
 include("heuristiques.jl")
 
