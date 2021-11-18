@@ -72,7 +72,7 @@ function add_edge!(graph::Graph{T}, edge:: Edge{T}) where T
   graph
 end
 
-
+""" Trouve les arêtes reliées à un noeud dont le nom est passé en argument"""
 function find_edges(node_name::String, graph::Graph{T}) where T
   lis_aretes = Edge{T}[]
   for edge in edges(graph)
@@ -107,6 +107,7 @@ function poids_total(graph::Graph)
   sum_weights
 end
 
+""" Calcule la matrice d'adjacence d'un graphe """
 function mat_adjacence(graphe::Graph)
   lis_edges = edges(graphe)
   n = length(nodes(graphe))

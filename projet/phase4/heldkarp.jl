@@ -1,12 +1,16 @@
 include("prim.jl")
 
+
+"""Prend en argument un graphe et un noeud et crée un 1-tree minimal pour ce graphe avec 2 arêtes liées au noeud
+"""
 function min1tree(graph::Graph,racine::Node)
     lis_nodes = copy(graph.nodes)
     lis_edges = copy(graph.edges)
     filter!(n -> n.name!= racine.name, lis_nodes)
     aretes_racine = find_edges(racine.name,graph)
     filter!(e -> e.sommet1.name != racine.name && e.sommet2.name != racine.name, lis_edges)
-    mst = prim(Graph(graph.name,lis_nodes,lis_edges))
+    mst = prim(Graph(graph.name,lis_nodes,lis_edges)) #Calcul d'un MST sur le graphe privé du noeud racine
+    
 
     min1 = Inf
     min2 = Inf
@@ -22,13 +26,15 @@ function min1tree(graph::Graph,racine::Node)
             edge2 = edge
             min2 = poids(edge)
         end
-    end
+    end #Calcul des 2 arêtes les plus légères reliées au noeud racine
     push!(mst.edges, edge1)
     push!(mst.edges, edge2)
     push!(mst.nodes, racine)
     mst
 end
 
+"""Prend en argument un graphe et renvoie le tableau des degrés de chaque noeud
+"""
 function degrees(graph::Graph)
     d = zeros(length(graph.nodes))
     for edge in graph.edges
@@ -38,6 +44,9 @@ function degrees(graph::Graph)
     d
 end
 
+"""Prend en argument un graphe non complet (typiquement un 1-tree ici) et renvoie un dictionnaire qui à chaque noeud associe la liste des
+arêtes reliées à ce noeud.
+"""
 function array_edge_tree(tree)
     mat_edges = Dict{String,Any}()
     for node in nodes(tree)
@@ -52,9 +61,13 @@ function array_edge_tree(tree)
 
 end
 
+
+"Prend en argument un 1-tree tree, la 'matrice d'adjacence' du 1-tree calculée avec array_edge_tree mat_tree
+et la matrice d'adjacence du graphe initial mat_adjacence qu'on suppose complet.
+Renvoie une tournée calculée en rajoutant une arête à tous les sommets de degré 1 rencontré"
 function tree_to_tour(mat_adjacence, tree, mat_tree)
     d = degrees(tree)
-    if d.-2 == zeros(length(nodes(tree)))
+    if d.-2 == zeros(length(nodes(tree))) #Cas de base : on a déjà une tournée
         tree
     else
         i_modif = "0"
@@ -62,7 +75,7 @@ function tree_to_tour(mat_adjacence, tree, mat_tree)
             if d[i] == 1
                 i_modif = string(i)
             end
-        end
+        end #On détermine un i à modifier : correspond à un noeud de degré 1 (choix arbitraire non optimisé).
 
         sommet_prec = i_modif
         derniere_edge = mat_tree[i_modif][1]
@@ -72,31 +85,36 @@ function tree_to_tour(mat_adjacence, tree, mat_tree)
             if sommet.name != sommet_prec
                 sommet_suiv = sommet.name
             end
-        end
+        end 
 
         while d[parse(Int, sommet_suiv)] <= 2
             for edge in mat_tree[sommet_suiv]
 
                 if (edge.sommet1.name, edge.sommet2.name) != (derniere_edge.sommet1.name, derniere_edge.sommet2.name)
                     edge_suiv = edge
-                end
+                end #on détermine l'arête qui n'est pas celle d'où l'on vient et qui est reliée au sommet suivant
             end
             sommet_prec = sommet_suiv
             for sommet in sommets(edge_suiv)
                 if sommet.name != sommet_prec
                     sommet_suiv = sommet.name
                 end
-            end
+            end #on update les sommets précédents, suivants.
             derniere_edge = edge_suiv
-                
+            #derniere_edge correspond à l'arête entre sommet_prec et sommet_suiv
 
             
         end
+        #On remonte le 1-tree pour trouver le sommet de degré supérieur strictement à 2 le plus proche du noeud à modifier
+        #On le garde en mémoire sous le nom sommet_suiv et on garde la dernière arête sous le nom derniere_edge
 
         poids_min = +Inf
         edge_to_del = derniere_edge
         edge_to_add = derniere_edge
 
+        #On va parcourir les arêtes reliées au sommet suivant pour déterminer laquelle il est le moins coûteux d'enlever en en rajoutant
+        #une entre l'autre sommet relié à sommet_suivant et le sommet initial.
+        #Nécessite que le graphe soit complet.
         for edge in mat_tree[sommet_suiv]
             if (edge.sommet1.name, edge.sommet2.name) != (derniere_edge.sommet1.name, derniere_edge.sommet2.name)
                 autre_sommet = sommet_suiv
@@ -117,13 +135,16 @@ function tree_to_tour(mat_adjacence, tree, mat_tree)
         end
         for sommet in sommets(edge_to_add)
             push!(mat_tree[sommet.name],edge_to_add)
-        end
+        end #On update mat_tree pour qu'elle colle au nouveau 1-tree
 
 
         filter!(e -> e.sommet1.name != edge_to_del.sommet1.name || e.sommet2.name != edge_to_del.sommet2.name, edges(tree))
         push!(edges(tree), edge_to_add)
+        #On update le 1_tree
 
         tree_to_tour(mat_adjacence,tree,mat_tree)
+        #On effectue un appel récursif : on sait que le nombre de sommets de degré inférieur strictement à 2 a baissé de exactement 1 et 
+        #le nombre d'arêtes du 1-tree n'a pas été modifié d'où la terminaison de la fonction et la garantie d'obtenir une tournée.
     end
         
     
@@ -136,7 +157,11 @@ end
 
 
 
-
+"""Prend en argument un graphe, un noeud de départ, un taux d'apprentissage et un nombre d'itérations (hyperparamètres à choisir pour
+améliorer la performance de l'algorithme) et un booléen pour afficher ou non l'évolution de la valeur W.
+Applique l'algorithme de Held et Karp sur ce graphe avec ces paramètres et transforme le 1_tree obtenu en tournée avec la fonction 
+tree_to_tour avant de reconstruire le graphe pour avoir une tournée avec les poids exacts des arêtes.
+"""
 function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, afficher::Bool)
     T = typeof(racine.data)
     k = 0
@@ -187,6 +212,11 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
     tour_reel = Graph(tour.name,nodes(tour),lis_edges_reel)
     tour_reel,poids_total(tour_reel)
 end
+
+function heldkarp(graph::Graph, ind_racine::Int, step_size::Float64,nb_iter::Int, afficher::Bool)
+    heldkarp(graph,nodes(graph)[ind_racine],step_size,nb_iter,afficher)
+end
+
 
 function test_hk(graphe::Graph,step_size::Float64,nb_iter::Int)  
     poids_min = Inf
