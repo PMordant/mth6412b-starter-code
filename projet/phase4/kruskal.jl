@@ -9,7 +9,7 @@ include("create_graph.jl")
 """ Prend une composante connexe et un noeud et vérifie si le noeud est dans cette composante"""
 function isinConnex(connex:: Connex, node_to_find:: Node)
     for node in nodes(connex)
-        if node.name == node_to_find.name
+        if name(node) == name(node_to_find)
             return true
         
         end
@@ -44,7 +44,6 @@ end
 """Applique l'algorithme de Kruskal sur un graphe"""
 function kruskal(graphe)
     lis_nodes = nodes(graphe)
-    @test length(lis_nodes) > 0
 
     lis_edges = edges(graphe) #déjà trié par poids croissant
     sort(lis_edges, by = x -> poids(x))
@@ -55,20 +54,19 @@ function kruskal(graphe)
         push!(lis_connex, Connex([node]))
     end
 
-    T = typeof(lis_edges[1].sommet1.data)
+    T = typeof(data(lis_nodes[1]))
     lis_aretes = Edge{T}[] #liste des aretes gardées dans l'arbre minimal
 
     while length(lis_connex) >= 2 #tant qu'on a plus d'une composante connexe on continue de chercher d'autres arêtes
         arete = popfirst!(lis_edges)
-        @test poids(arete) <= poids(lis_edges[1]) #On vérifie que le poids de l'arête est bien inférieur à celui de la suivante.
 
-        connex1 = find_connex!(lis_connex, Node(arete.sommet1.name, []))
-        if isinConnex(connex1, Node(arete.sommet2.name, []))
+        connex1 = find_connex!(lis_connex, Node(name(sommets(arete)[1]), []))
+        if isinConnex(connex1, Node(name(sommets(arete)[2]), []))
             push!(lis_connex, connex1) #On remet la composante connexe enlevée dans la liste.
         else
             #On cherche la composante connexe du 2ème sommet, on rajoute l'arête à la liste des arêtes pertinentes 
             #et on fusionne les 2 composantes connexes.
-            connex2 = find_connex!(lis_connex, Node(arete.sommet2.name, []))
+            connex2 = find_connex!(lis_connex, Node(name(sommets(arete)[2]), []))
             push!(lis_aretes, arete)
             connex_fusionne = merge!(connex1, connex2)
             push!(lis_connex,connex_fusionne)

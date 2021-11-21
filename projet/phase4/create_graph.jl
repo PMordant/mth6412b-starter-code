@@ -37,10 +37,10 @@ function create_graph(filename::String)
                 sommet2 = Node("0",[])
                 for noeud in lis_nodes
                     
-                    if noeud.name == string(k)
+                    if name(noeud) == string(k)
                         sommet1 = noeud
                     end
-                    if noeud.name == string(graph_edges[k][l][1])
+                    if name(noeud) == string(graph_edges[k][l][1])
                         sommet2 = noeud
                     end
                 end
@@ -57,10 +57,10 @@ function create_graph(filename::String)
                     sommet2 = Node("0",[])
                     for noeud in lis_nodes
                         
-                        if noeud.name == string(k)
+                        if name(noeud) == string(k)
                             sommet1 = noeud
                         end
-                        if noeud.name == string(graph_edges[k][l][1])
+                        if name(noeud) == string(graph_edges[k][l][1])
                             sommet2 = noeud
                         end
                     end
@@ -93,9 +93,9 @@ function plot_graph(noeuds::Vector{Node{Vector{Float64}}}, edges::Vector{Edge{Ve
     fig = plot(legend=false)
     # edge positions
     for k = 1 : length(edges)
-      noeud1 = edges[k].sommet1
-      noeud2 = edges[k].sommet2
-        plot!([noeud1.data[1], noeud2.data[1]], [noeud1.data[2],noeud2.data[2]],
+      noeud1 = sommets(edges[k])[1]
+      noeud2 = sommets(edges[k])[2]
+        plot!([data(noeud1)[1], data(noeud2)[1]], [data(noeud1)[2],data(noeud2)[2]],
             linewidth=1.5, alpha=0.75, color=:lightgray)
     end
 
@@ -117,7 +117,7 @@ function plot_graph(noeuds::Vector{Node{Vector{Float64}}}, edges::Vector{Edge{Ve
   """Fonction de commodité qui lit un fichier stsp et trace le graphe."""
   function plot_graph(filename::String)
     graph = create_graph(filename)
-    plot_graph(graph.nodes, graph.edges)
+    plot_graph(nodes(graph), edges(graph))
   end
   
 

@@ -25,7 +25,7 @@ end
 
 
 function prim(graph::Graph, node_depart::Node=graph.nodes[1])
-    T = typeof(graph.nodes[1].data)
+    T = typeof(data(nodes(graph)[1]))
     
     connex_deja_traitee = Connex(Node{Any}[]) # Initialisation de la composante connexe déjà traitée
     arete_arbre_min = Edge{T}[]     #Initialisation de la liste des arêts de l'arbre de recouvrement minimal
@@ -35,31 +35,31 @@ function prim(graph::Graph, node_depart::Node=graph.nodes[1])
     dico_parents = Dict{String,Any}()
     dico_rangs = Dict{String, Any}()
 
-    for node in graph.nodes
+    for node in nodes(graph)
         
-        push!(dico_min_weights, node.name => Inf)
-        push!(dico_parents, node.name => nothing)
-        push!(dico_rangs, node.name => 0)
+        push!(dico_min_weights, name(node) => Inf)
+        push!(dico_parents, name(node) => nothing)
+        push!(dico_rangs, name(node) => 0)
     
     end #Dictionnaires des parents et des rangs initialisés
 
 
     #On commence l'algorithme en traitant le noeud de départ. 
-    delete!(dico_min_weights, node_depart.name) 
-    edges_connected = find_edges(node_depart.name, graph)
+    delete!(dico_min_weights, name(node_depart)) 
+    edges_connected = find_edges(name(node_depart), graph)
     for edge in edges_connected
         autre_sommet = " "
-        if edge.sommet1.name != node_depart.name
-            autre_sommet = edge.sommet1.name
+        if edge.sommet1.name != name(node_depart)
+            autre_sommet = name(sommets(edge)[1])
         else
-            autre_sommet = edge.sommet2.name
+            autre_sommet = name(sommets(edge)[2])
         end
-        dico_min_weights[autre_sommet] = edge.poids
+        dico_min_weights[autre_sommet] = poids(edge)
     end
 
-    dico_parents[node_depart.name] = node_depart.name
-    dico_rangs[node_depart.name] = 0
-    add_node!(connex_deja_traitee, Node{Any}(node_depart.name, nothing))
+    dico_parents[name(node_depart)] = name(node_depart)
+    dico_rangs[name(node_depart)] = 0
+    add_node!(connex_deja_traitee, Node{Any}(name(node_depart), nothing))
 
     while isempty(dico_min_weights) == false 
         
@@ -73,18 +73,18 @@ function prim(graph::Graph, node_depart::Node=graph.nodes[1])
 
         for edge in edges_connected
             autre_sommet = " "
-            if edge.sommet1.name != node_to_add
-                autre_sommet = edge.sommet1.name
+            if name(sommets(edge)[1]) != node_to_add
+                autre_sommet = name(sommets(edge)[1])
             else
-                autre_sommet = edge.sommet2.name
+                autre_sommet = name(sommets(edge)[2])
             end
 
             if haskey(dico_min_weights, autre_sommet)
-                if edge.poids < dico_min_weights[autre_sommet]
-                    dico_min_weights[autre_sommet] = edge.poids
+                if poids(edge) < dico_min_weights[autre_sommet]
+                    dico_min_weights[autre_sommet] = poids(edge)
                 end
             else   
-                if edge.poids == min_weight
+                if poids(edge) == min_weight
                     arete_a_garder = edge
                 end
             end
@@ -98,7 +98,7 @@ function prim(graph::Graph, node_depart::Node=graph.nodes[1])
 
 
     end
-    Graph(graph.name, graph.nodes, arete_arbre_min)
+    Graph(name(graph), nodes(graph), arete_arbre_min)
 
 
 end

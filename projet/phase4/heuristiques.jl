@@ -10,32 +10,32 @@ fusionnées avec la méthode de l'union via le rang. Modifie en place les dictio
 """
 function heuristique1!(dico_rang::Dict{String,Any}, dico_parents::Dict{String,Any},  connex1::Connex, connex2::Connex)
     max_rang1= 0
-    sommet_max1 = connex1.nodes[1]
+    sommet_max1 = nodes(connex1)[1]
     max_rang2 = 0
-    sommet_max2 = connex2.nodes[1]
+    sommet_max2 = nodes(connex2)[1]
 
-    for sommet in connex1.nodes
-        if dico_rang[sommet.name]> max_rang1
-            max_rang1 = dico_rang[sommet.name]
+    for sommet in nodes(connex1)
+        if dico_rang[name(sommet)]> max_rang1
+            max_rang1 = dico_rang[name(sommet)]
             sommet_max1 = sommet
         end
     end
 
-    for sommet in connex2.nodes
-        if dico_rang[sommet.name]> max_rang2
-            max_rang2 = dico_rang[sommet.name]
+    for sommet in nodes(connex2)
+        if dico_rang[name(sommet)]> max_rang2
+            max_rang2 = dico_rang[name(sommet)]
             sommet_max2 = sommet
         end
     end
     
     if max_rang1 > max_rang2
-        dico_parents[sommet_max2.name] = sommet_max1.name
+        dico_parents[name(sommet_max2)] = name(sommet_max1)
     else 
         if max_rang2 > max_rang1
-            dico_parents[sommet_max1.name] = sommet_max2.name
+            dico_parents[name(sommet_max1)] = name(sommet_max2)
         else
-            dico_parents[sommet_max2.name] = sommet_max1.name
-            dico_rang[sommet_max1.name] += 1
+            dico_parents[name(sommet_max2)] = name(sommet_max1)
+            dico_rang[name(sommet_max1)] += 1
         end
     end
    
@@ -48,7 +48,7 @@ Renvoie l'ancêtre de ce noeud en mettant à jour les dictionnaires des parents 
 """
 function heuristique2!(noeud::Node,dico_parents::Dict)
     lis_parents = []
-    parent =  noeud.name
+    parent =  name(noeud)
 
     while dico_parents[parent] != nothing
         push!(lis_parents, parent)

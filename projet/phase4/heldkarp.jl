@@ -4,12 +4,12 @@ include("prim.jl")
 """Prend en argument un graphe et un noeud et crée un 1-tree minimal pour ce graphe avec 2 arêtes liées au noeud
 """
 function min1tree(graph::Graph,racine::Node)
-    lis_nodes = copy(graph.nodes)
-    lis_edges = copy(graph.edges)
-    filter!(n -> n.name!= racine.name, lis_nodes)
-    aretes_racine = find_edges(racine.name,graph)
-    filter!(e -> e.sommet1.name != racine.name && e.sommet2.name != racine.name, lis_edges)
-    mst = prim(Graph(graph.name,lis_nodes,lis_edges)) #Calcul d'un MST sur le graphe privé du noeud racine
+    lis_nodes = copy(nodes(graph))
+    lis_edges = copy(edges(graph))
+    filter!(n -> name(n)!= name(racine), lis_nodes)
+    aretes_racine = find_edges(name(racine),graph)
+    filter!(e -> name(sommets(e)[1]) != name(racine) && name(sommets(e)[2]) != name(racine), lis_edges)
+    mst = prim(Graph(name(graph),lis_nodes,lis_edges)) #Calcul d'un MST sur le graphe privé du noeud racine
     
 
     min1 = Inf
@@ -27,19 +27,19 @@ function min1tree(graph::Graph,racine::Node)
             min2 = poids(edge)
         end
     end #Calcul des 2 arêtes les plus légères reliées au noeud racine
-    push!(mst.edges, edge1)
-    push!(mst.edges, edge2)
-    push!(mst.nodes, racine)
+    push!(edges(mst), edge1)
+    push!(edges(mst), edge2)
+    push!(nodes(mst), racine)
     mst
 end
 
 """Prend en argument un graphe et renvoie le tableau des degrés de chaque noeud
 """
 function degrees(graph::Graph)
-    d = zeros(length(graph.nodes))
-    for edge in graph.edges
-        d[parse(Int, edge.sommet1.name)] += 1
-        d[parse(Int, edge.sommet2.name)] += 1
+    d = zeros(length(nodes(graph)))
+    for edge in edges(graph)
+        d[parse(Int, name(sommets(edge)[1]))] += 1
+        d[parse(Int, name(sommets(edge)[2]))] += 1
     end
     d
 end
@@ -50,11 +50,11 @@ arêtes reliées à ce noeud.
 function array_edge_tree(tree)
     mat_edges = Dict{String,Any}()
     for node in nodes(tree)
-        mat_edges[node.name] = []
+        mat_edges[name(node)] = []
     end
     for edge in edges(tree)
         for sommet in sommets(edge)
-            push!(mat_edges[sommet.name], edge)
+            push!(mat_edges[name(sommet)], edge)
         end
     end
     mat_edges
@@ -82,22 +82,22 @@ function tree_to_tour(mat_adjacence, tree, mat_tree)
         edge_suiv = derniere_edge
         sommet_suiv = sommet_prec
         for sommet in sommets(derniere_edge)
-            if sommet.name != sommet_prec
-                sommet_suiv = sommet.name
+            if name(sommet) != sommet_prec
+                sommet_suiv = name(sommet)
             end
         end 
 
         while d[parse(Int, sommet_suiv)] <= 2
             for edge in mat_tree[sommet_suiv]
 
-                if (edge.sommet1.name, edge.sommet2.name) != (derniere_edge.sommet1.name, derniere_edge.sommet2.name)
+                if (name(sommets(edge)[1]), name(sommets(edge)[2])) != (name(sommets(derniere_edge)[1]), name(sommets(derniere_edge)[2]))
                     edge_suiv = edge
                 end #on détermine l'arête qui n'est pas celle d'où l'on vient et qui est reliée au sommet suivant
             end
             sommet_prec = sommet_suiv
             for sommet in sommets(edge_suiv)
-                if sommet.name != sommet_prec
-                    sommet_suiv = sommet.name
+                if name(sommet) != sommet_prec
+                    sommet_suiv = name(sommet)
                 end
             end #on update les sommets précédents, suivants.
             derniere_edge = edge_suiv
@@ -116,11 +116,11 @@ function tree_to_tour(mat_adjacence, tree, mat_tree)
         #une entre l'autre sommet relié à sommet_suivant et le sommet initial.
         #Nécessite que le graphe soit complet.
         for edge in mat_tree[sommet_suiv]
-            if (edge.sommet1.name, edge.sommet2.name) != (derniere_edge.sommet1.name, derniere_edge.sommet2.name)
+            if (name(sommets(edge)[1]), name(sommets(edge)[2])) != (name(sommets(derniere_edge)[1]), name(sommets(derniere_edge)[2]))
                 autre_sommet = sommet_suiv
                 for sommet in sommets(edge)
-                    if sommet.name != sommet_suiv
-                        autre_sommet = sommet.name
+                    if name(sommet) != sommet_suiv
+                        autre_sommet = name(sommet)
                     end
                 end
                 if poids(mat_adjacence[parse(Int, autre_sommet),parse(Int,i_modif)]) - poids(mat_adjacence[parse(Int, autre_sommet),parse(Int, sommet_suiv)]) <= poids_min
@@ -131,14 +131,14 @@ function tree_to_tour(mat_adjacence, tree, mat_tree)
         end
 
         for sommet in sommets(edge_to_del)
-            filter!(e -> e.sommet1.name != edge_to_del.sommet1.name || e.sommet2.name != edge_to_del.sommet2.name, mat_tree[sommet.name])
+            filter!(e -> name(sommets(e)[1]) != name(sommets(edge_to_del)[1]) || name(sommets(e)[2]) != name(sommets(edge_to_del)[2]), mat_tree[name(sommet)])
         end
         for sommet in sommets(edge_to_add)
-            push!(mat_tree[sommet.name],edge_to_add)
+            push!(mat_tree[name(sommet)],edge_to_add)
         end #On update mat_tree pour qu'elle colle au nouveau 1-tree
 
 
-        filter!(e -> e.sommet1.name != edge_to_del.sommet1.name || e.sommet2.name != edge_to_del.sommet2.name, edges(tree))
+        filter!(e -> name(sommets(e)[1]) != name(sommets(edge_to_del)[1]) || name(sommets(e)[2]) != name(sommets(edge_to_del)[2]), edges(tree))
         push!(edges(tree), edge_to_add)
         #On update le 1_tree
 
@@ -163,18 +163,18 @@ Applique l'algorithme de Held et Karp sur ce graphe avec ces paramètres et tran
 tree_to_tour avant de reconstruire le graphe pour avoir une tournée avec les poids exacts des arêtes.
 """
 function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, afficher::Bool)
-    T = typeof(racine.data)
+    T = typeof(data(racine))
     k = 0
-    Pi = zeros(length(graph.nodes))
+    Pi = zeros(length(nodes(graph)))
     W = -Inf
-    d = zeros(length(graph.nodes))
+    d = zeros(length(nodes(graph)))
     v = d.-2
     matrice_adjacence = mat_adjacence(graph)
-    graph_modifie = Graph(graph.name,copy(graph.nodes),copy(graph.edges))
+    graph_modifie = Graph(name(graph),copy(nodes(graph)),copy(edges(graph)))
     min1_tree = min1tree(graph_modifie,racine)
     step_effectif = step_size
 
-    while v != zeros(length(graph.nodes)) && k <= nb_iter
+    while v != zeros(length(nodes(graph))) && k <= nb_iter
         wk = poids_total(min1_tree) - 2*sum(Pi)
         W = max(W,wk)
         d = degrees(min1_tree)
@@ -189,10 +189,10 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
 
         Pi = Pi + step_effectif * v
         lis_edges = Edge{T}[]
-        for edge in graph_modifie.edges
-            push!(lis_edges, Edge(edge.sommet1, edge.sommet2, edge.poids +  step_size*v[parse(Int, edge.sommet1.name)] + step_size*v[parse(Int, edge.sommet2.name)]))
+        for edge in edges(graph_modifie)
+            push!(lis_edges, Edge(sommets(edge)[1], sommets(edge)[2], poids(edge) +  step_size*v[parse(Int, name(sommets(edge)[1]))] + step_size*v[parse(Int, name(sommets(edge)[2]))]))
         end
-        graph_modifie= Graph(graph_modifie.name,graph_modifie.nodes,lis_edges)
+        graph_modifie= Graph(name(graph_modifie),nodes(graph_modifie),lis_edges)
         k += 1
         if afficher && k%(nb_iter//10) == 0
             println(W)
@@ -206,10 +206,10 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
 
     lis_edges_reel = Edge{T}[]
     for edge in edges(tour)
-        push!(lis_edges_reel, matrice_adjacence[parse(Int,edge.sommet1.name),parse(Int,edge.sommet2.name)])
+        push!(lis_edges_reel, matrice_adjacence[parse(Int,name(sommets(edge)[1])),parse(Int,name(sommets(edge)[2]))])
     end
 
-    tour_reel = Graph(tour.name,nodes(tour),lis_edges_reel)
+    tour_reel = Graph(name(tour),nodes(tour),lis_edges_reel)
     tour_reel,poids_total(tour_reel)
 end
 
@@ -232,7 +232,7 @@ function test_hk(graphe::Graph,step_size::Float64,nb_iter::Int)
             node_min = node
             println("Amélioré")
         end
-        println(node.name* " : "*string(poids_arbre))
+        println(name(node)* " : "*string(poids_arbre))
     end
 
     graph_min, poids_min, node_min

@@ -7,14 +7,14 @@ dict_args_hk = Dict("bayg29.tsp" => Any[16,0.01,10000],
                     "brazil58.tsp" => Any[38,1.,10000],
                     "brg180.tsp" => Any[1,1.,0],
                     "dantzig42.tsp" => Any[35,0.1,1000],
-                    "fri26.tsp" => Any[19,1.,10000],
+                    "fri26.tsp" => Any[19,1.,100],
                     "gr17.tsp" => Any[7,0.01,100000],
                     "gr21.tsp" => Any[1,0.1,10000],
                     "gr24.tsp" => Any[8,0.1,10000],
                     "gr48.tsp" => Any[11,0.01,50000],
                     "gr120.tsp" => Any[61,1.,1000],
                     "hk48.tsp" => Any[17,0.1,10000],
-                    "pa561.tsp" => Any[1,1.,0],
+                    "pa561.tsp" => Any[2,0.01,2000],
                     "swiss42.tsp" => Any[40,0.1,10000]
 )
 
