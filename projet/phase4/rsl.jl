@@ -1,5 +1,5 @@
 include("prim.jl")
-
+include("kruskal.jl")
 
 """Prend en argument un arbre de recouvrement graphe et un noeud racine. Parcourt l'arbre en préordre et renvoie la liste des noeuds
 visités dans l'ordre 
