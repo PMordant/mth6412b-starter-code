@@ -61,7 +61,7 @@ function prim(graph::Graph, node_depart::Node=graph.nodes[1])
     dico_rangs[name(node_depart)] = 0
     add_node!(connex_deja_traitee, Node{Any}(name(node_depart), nothing))
 
-    while isempty(dico_min_weights) == false 
+    while !isempty(dico_min_weights) 
         
         #Tant qu'il reste un noeud non traité, on récupère le noeud à plus faible distance de la composante connexe déjà traitée et 
         #on effectue une itération en retrouvant UNE arête à garder qui donnait cette distance minimale et, pour chaque arête connectée

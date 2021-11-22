@@ -1,4 +1,4 @@
-include("prim.jl")
+include("rsl.jl")
 
 
 """Prend en argument un graphe et un noeud et crée un 1-tree minimal pour ce graphe avec 2 arêtes liées au noeud
@@ -158,7 +158,7 @@ end
 
 
 """Prend en argument un graphe, un noeud de départ, un taux d'apprentissage et un nombre d'itérations (hyperparamètres à choisir pour
-améliorer la performance de l'algorithme) et un booléen pour afficher ou non l'évolution de la valeur W.
+améliorer la performance de l'algorithme) et un booléen pour afficher ou non l'évolution de la valeur W tous les dixièmes de nb_iter.
 Applique l'algorithme de Held et Karp sur ce graphe avec ces paramètres et transforme le 1_tree obtenu en tournée avec la fonction 
 tree_to_tour avant de reconstruire le graphe pour avoir une tournée avec les poids exacts des arêtes.
 """
@@ -172,31 +172,27 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
     matrice_adjacence = mat_adjacence(graph)
     graph_modifie = Graph(name(graph),copy(nodes(graph)),copy(edges(graph)))
     min1_tree = min1tree(graph_modifie,racine)
-    step_effectif = step_size
 
     while v != zeros(length(nodes(graph))) && k <= nb_iter
         wk = poids_total(min1_tree) - 2*sum(Pi)
         W = max(W,wk)
         d = degrees(min1_tree)
         v = d.-2
-        if k<= nb_iter/10
-            step_effectif = 100*step_size
-        elseif k <= nb_iter/2
-            step_effectif = 10*step_size
-        else 
-            step_effectif = step_size
-        end
+        Pi = Pi + step_size * v
 
-        Pi = Pi + step_effectif * v
+
         lis_edges = Edge{T}[]
         for edge in edges(graph_modifie)
             push!(lis_edges, Edge(sommets(edge)[1], sommets(edge)[2], poids(edge) +  step_size*v[parse(Int, name(sommets(edge)[1]))] + step_size*v[parse(Int, name(sommets(edge)[2]))]))
         end
+
         graph_modifie= Graph(name(graph_modifie),nodes(graph_modifie),lis_edges)
         k += 1
+
         if afficher && k%(nb_iter//10) == 0
             println(W)
         end
+
         min1_tree = min1tree(graph_modifie,racine)
 
 
@@ -207,17 +203,19 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
     lis_edges_reel = Edge{T}[]
     for edge in edges(tour)
         push!(lis_edges_reel, matrice_adjacence[parse(Int,name(sommets(edge)[1])),parse(Int,name(sommets(edge)[2]))])
-    end
+    end #On reconstruit la bonne tournée avec les bons poids
 
     tour_reel = Graph(name(tour),nodes(tour),lis_edges_reel)
     tour_reel,poids_total(tour_reel)
 end
 
+""" Permet de prendre l'indice du noeud de départ plutôt que le noeud de départ en argument."""
 function heldkarp(graph::Graph, ind_racine::Int, step_size::Float64,nb_iter::Int, afficher::Bool)
     heldkarp(graph,nodes(graph)[ind_racine],step_size,nb_iter,afficher)
 end
 
-
+""" Applique l'algorithme de Held et Karp sur le graphe en utilisant tous les noeuds de départ pour un taux d'apprentissage et un 
+nombre d'itérations maximal passés en argument. """
 function test_hk(graphe::Graph,step_size::Float64,nb_iter::Int)  
     poids_min = Inf
     T = typeof(graphe.nodes[1].data)

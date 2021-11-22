@@ -14,7 +14,7 @@ end
 
 # ╔═╡ 52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
 begin
-	path_fonc = joinpath("phase4", "rsl.jl")
+	path_fonc = joinpath("phase4", "heldkarp.jl")
 	include(path_fonc)
 end
 
@@ -40,152 +40,193 @@ md"## Rapport de projet"
 md" ### Pierre Mordant & Mahamadou Sarité"
 
 # ╔═╡ 8914a271-58db-45d0-a227-804ac9cdac5b
-md"### Phase 3"
+md"### Phase 4"
 
 # ╔═╡ 4c380476-c375-4da3-a58e-acdb303d3a76
-md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/Phase-3)"
+md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/Phase-4)"
 
 # ╔═╡ f345a0a0-2342-4488-ac0a-7b3c4f5fe381
 begin
-md" Dans cette troisième phase du projet sur le problème du voyageur de commerce symétrique, nous avons implémenté l'algorithme de Prim.
-  1. Nous avons d'abord effectué quelques modifications/corrections des phases précédentes
-  2. Nous avons implémenté les deux heuristiques présentées en TP, puis les avons utilisé pour implémenter l'algorithme de Prim.
-  3. Nous avons effectué des tests de notre implémentation sur les instances de tsp données."
+md" Dans cette troisième phase du projet sur le problème du voyageur de commerce symétrique, nous avons implémenté les algorithmes de RSL et de HK pour déterminer une tournée dont le coût approche le coût minimal d'une tournée.
+  1. Nous avons d'abord effectué quelques modifications/corrections des phases précédentes.
+  2. Nous avons implémenté les deux algorithmes.
+  3. Nous avons effectué des tests de nos implémentation sur les instances de tsp données."
   
 end
 
+# ╔═╡ b64118ca-0d04-4c8c-b375-e267e162c7f6
+md" Tout d'abord, nous avons effectué quelques modifications et corrections de notre phase 3. Nous avons ainsi enlevé les dernières balises @test présentes dans le corps des fonctions, et nous avons enlevé les références aux *graph.nodes* pour utiliser les fonctions *nodes(graph)* et les équivalents sur les attributs des types **Node**, **Edge**, **Graph** et **Connex**"
+	
+
 # ╔═╡ ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
-md"Nous avons tout d'abord modifié quelques points des phases précédentes pour répondre aux remarques faites dans la correction de la phase 2. La plus significative d'entre elle est la modification du type **Edge** : il est maintenant constitué de deux sommets de type **Node** (et non plus **String** qui donnait le nom du sommet) et d'un flottant donnant le poids de l'arête. On présente un exemple ci-dessous"
+md"Question sur le rang maximal dans un arbre avec l'heuristique 1 : tous les rangs sont initialisés à 0. Quand on appellera l'algorithme de Prim, on aura exactement n-1 itérations avec n le nombre de sommets de l'arbre, donc n-1 appels à la fonction *heuristique1!*. Or, à chaque appel de *heuristique1!*, le rang d'un noeud augmente au plus de 1. Le rang d'un noeud est donc d'au plus n-1."
 
-# ╔═╡ 916261ac-e4c4-4fd6-8e1f-ba9600ebd46b
-begin 
-	node1 = Node{Any}("1",nothing)
-	node2 = Node{Any}("2", nothing)
-	arete = Edge{Any}(node1,node2,3)
-end
+# ╔═╡ 69d54b10-0cc5-48b8-b3b3-6c53945c2e65
+md"De plus, on commence avec $n$ composantes connexes avec chacune 1 sommet. Or, le rang d'un sommet n'augmente que quand on fusionne deux composantes connexes dont les racines ont le même rang. On peut montrer par récurrence, que la racine d'une composante connexe est de rang $k$ si le nombre de sommets de la composante connexe est supérieur ou égal à $2^k$ . L'initialisation est bien vérifiée, et une composante connexe a sa racine de rang $k+1$ si et seulement si elle a été créée par la fusion de 2 composantes connexes de rang $k$, comprenant donc au moins $2^k$ sommets par hypothèse de récurrence. Elle contient donc au moins $2^{k+1}$ sommets ce qui prouve l'hérédité. En reformulant, le rang d'un noeud dans un arbre de taille n est borné par $\lfloor log_{2}(n) \rfloor$" 
 
-# ╔═╡ baf7959e-44c8-45d7-9eef-d681a1d0805d
-md"Il est notable que le type **Edge** dépend maintenant d'un type **T** correspondant à la donnée des noeuds. On peut donc spécifier les types attendus dans les données des sommets dès la création de l'arête."
+# ╔═╡ 085fe42d-c57f-4bc6-8a63-72f48fc88e2a
+md"Enfin, sur l'utilité de la fonction heuristique1! placée à la fin de l'algorithme de Prim, elle permet de construire l'arbre de recherche de façon efficace pour avoir un arbre de recherche le moins profond possible. Ainsi la composante connexe *connex\_deja\_traitee* est construite de manière optimale."
 
-# ╔═╡ 3f5987dc-cc9f-4be9-9602-c260aba63177
-md"Nous avons également modifié notre fonction kruskal pour qu'elle puisse prendre en argument un graphe et plus seulement un chemin d'accès à une des instances tsp. Nous avons aussi rajouté une fonction permettant de calculer le poids total d'un graphe."
+# ╔═╡ a9b98776-5e37-4925-8bd4-c667bd20d8a7
 
-# ╔═╡ 812748d8-a029-4efb-ae10-8f0b6b4445a6
+
+# ╔═╡ 068be080-b311-4a5d-af1d-e9cec2a2eda6
+
+
+# ╔═╡ 37195aed-5d39-44f7-a75f-92122ab7c7d3
+md"Nous avons ensuite travaillé pour implémenter l'algorithme de RSL pour calculer une tournée à partir d'un arbre de recouvrement minimal d'un graphe. Nous avons ainsi implémenté une fonction *preordre* parcourant un arbre dont la racine est donnée en argument et indiquant la liste des noeuds visités dans l'ordre : on rajoute la racine à la liste, puis on parcourt les arêtes reliées à cette racine et pour chacune on fait un appel à *preordre* sur le sous-graphe auquel on a enlevé cette arête et dont la racine était l'autre extrêmité de l'arête. On fera ainsi un parcours en préordre de cette composante connexe, avant de revenir aux autres fils de la racine. "
+
+# ╔═╡ 6a46e8ce-5e73-4ab2-b47c-3003ee93da84
+md" Nous avons ensuite implémenté la fonction rsl : on construit un arbre de recouvrement minimal avec un algorithme au choix entre Prim et Kruskal (noeud de départ passé en argument pour Prim) puis on parcourt l'arbre avec la fonction *preordre* pour récupérer une liste de noeuds visités dans l'ordre. On rajoute finalement les arêtes correspondantes avant de renvoyer la tournée obtenue. On présente une tournée obtenue de cette manière ci-dessous à partir du graphe bayg29. "
+
+# ╔═╡ 2fb5056b-4ea9-4aeb-b122-08dc7ea695ce
+bayg29 = create_graph(joinpath(path_instances,"bayg29.tsp"))
+
+# ╔═╡ 5fd34b54-e8f8-4939-bcd6-e7368a7af5a3
+tour_bayg29 = rsl(bayg29, nodes(bayg29)[1], "prim" )
+
+# ╔═╡ 473d557d-3e50-451a-9eab-7ab44240dfb8
+plot_graph(nodes(tour_bayg29),edges(tour_bayg29))
+
+# ╔═╡ aa812e7a-15e4-492b-912d-b6139a1de7e4
+md" Pour que cet algorithme fonctionne, il est nécessaire que le graphe passé en argument soit complet, ce qui est le cas de tous les graphes disponibles (sauf brg180 sur lequel nous avons un problème de construction et que nous ignorerons dans la suite). On ne vérifie donc pas cette condition. On vérifie cependant que l'inégalité triangulaire est vérifiée pour les graphes considérés avec la fonction *test_conditions* qui renvoie (true,0,0,0) si l'inégalité triangulaire est vérifiée pour tous les sommets, et false avec un exemple de triplets d'indices pour lesquels elle n'est pas vérifiée sinon."
+
+# ╔═╡ ec50db94-f394-4c10-927b-1e1fa34ad728
+bays29 = create_graph(joinpath(path_instances,"bays29.tsp"))
+
+# ╔═╡ ba9461a0-31ff-4974-82e6-ca02807c9c5d
+test_conditions(bayg29)
+
+# ╔═╡ 6ff5dddf-9d43-485d-9fb0-c7d9183747d8
+test_conditions(bays29)
+
+# ╔═╡ a8e36544-c43f-469b-80b6-e4a8fe801ff8
+md" Cette condition d'inégalité triangulaire n'est pas nécessaire pour garantir que l'algorithme de RSL tourne : elle est juste nécessaire pour garantir que la tournée obtenue est bien de poids au plus 2 fois supérieur à celui de la tournée optimale. On n'inclut donc pas ce test d'inégalité triangulaire dans la fonction *rsl*. On l'inclut cependant dans la fonction *min_rsl* : cette fonction prend en argument un graphe, et calcule toutes les tournées qu'on peut obtenir en prenant tous les noeuds comme noeud de départ et en utilisant Prim et Kruskal, et renvoie la tournée minimale obtenue, ainsi que son poids et le noeud de départ. Au début de cette fonction, on rajoute un test de l'inégalité triangulaire, pour afficher un avertissement si celle-ci n'est pas vérifiée. On montre un exemple d'une tournée ainsi obtenue ci-dessous." 
+
+# ╔═╡ a520301b-2bc3-452f-aef9-1be9e10046f7
+tour_min_bayg29, poids_min_bayg29, noeud_depart_bayg29 = min_rsl(bayg29)
+
+# ╔═╡ e3bf6e4a-4da9-4897-9c86-3863a1373031
+plot_graph(nodes(tour_min_bayg29),edges(tour_min_bayg29))
+
+# ╔═╡ 018f5c9d-7d88-4081-9721-87944c5e90d0
+md"On a cependant constaté que les tournées trouvées avec *min_rsl* sont toutes moins de 2 fois supérieures au poids de la tournée optimale. On présente tous les résultats obtenus à la fin de ce rapport."
+
+# ╔═╡ 7c089bc5-9252-469a-80cd-c669285b3c31
+
+
+# ╔═╡ 8943125d-233d-439f-8641-5028ce556fb1
+
+
+# ╔═╡ 60534fee-514d-4fcc-8555-2bd82dc1d130
+ md"Nous avons ensuite travaillé sur l'implémentation de l'algorithme de Held et Karp. On a une fonction w qui calcule le poids d'un 1-tree avec des pénalités sur les sommets dont les degrés sont différents de 2. On sait que cette fonction est toujours inférieure au poids de la tournée optimale et que si elle atteint ce poids, cela signifie que l'on a trouvé la tournée optimale. Pour cela, nous avons commencé par construire une fonction *min1tree* qui prend en argument un graphe et une racine. Elle calcule un arbre de recouvrement minimal (avec l'algorithme de Prim et de noeud de départ par défaut) sur le sous-graphe auquel on a enlevé la racine, puis rajoute les 2 arêtes de coûts minimaux reliées à cette racine pour former un 1-tree.   
+
+On construit ensuite la fonction *heldkarp* : cette fonction va calculer un 1-tree minimal avec la fonction *min1tree* à chaque itération. Tant que ce 1-tree n'est pas une tournée, on va modifier les arêtes pour pénaliser les noeuds de degrés différents de 2. Le vecteur Pi dans le code garde en mémoire les pénalités appliquées à chaque noeud. On va ainsi augmenter la valeur de W, qui est la meilleure évaluation du poids d'un 1-tree ainsi obtenu, auquel on enlève les pénalités appliquées. Une fois qu'on a obtenu une tournée, ou au bout d'un nombre d'itérations maximal, on renvoie le dernier 1-tree obtenu. On a ainsi aucune garantie que ce 1-tree soit une tournée, on va donc utiliser la fonction *tree\_to\_tour* qui transforme un 1_tree ressemblant beaucoup en tournée de manière intuitive. On obtient ainsi une tournée de poids proche du poids optimal.  
+
+On avait construit la fonction *tree\_to\_tour*  de la manière suivante : on parcourt tous les noeuds de degré 1 (normalement peu nombreux après les itérations de *heldkarp*), et on remonte le 1-tree jusqu'à trouver un noeud de degré supérieur ou égal à 3 ; on va alors supprimer une arête reliée à ce noeud, et en rajouter une entre le sommet de degré 1 et l'autre extrêmité de l'arête supprimée. Le choix de cette arête est fait de manière à minimiser le poids total du graphe, et cela ne peut pas être l'arête d'où l'on vient (on détruirait alors la connexité du graphe). 
+
+On présente une tournée ainsi obtenue sur bayg29 ci-dessous." 
+
+# ╔═╡ c2a867c4-0d89-4117-a976-d32beac11e5a
+tour_hk_bayg29, poids_hk_bayg29 = heldkarp(bayg29, 16,0.01,10000, false)
+
+# ╔═╡ 26168326-e262-4d78-8db5-11da9f57c576
+plot_graph(nodes(tour_hk_bayg29), edges(tour_hk_bayg29))
+
+# ╔═╡ a83a9354-ef22-43bf-b741-99026fdff382
+md"La fonction heldkarp dépend ainsi de 3 paramètres : le choix du noeud de départ, le choix du taux d'apprentissage step\_size et le nombre d'itérations maximal. Le nombre d'itérations maximal donne un temps maximal d'éxécution à l'algorithme : il peut ainsi être augmenté sur des plus petits graphes. 
+
+Le taux d'apprentissage indique la vitesse de convergence vers la meilleure valeur de w : plus elle est petite, plus la convergence va être lente. Cependant, plus elle est petite, plus on pourra avoir une bonne approximation de la valeur optimale de w si on se donne un nombre d'itérations élevé. Ici, nous avons fait le choix de garder un taux d'apprentissage constant pendant toutes les itérations. Nous avions aussi essayé de modifier ce taux d'apprentissage pour qu'il soit plus élevé pendant les 10% premières itérations, et plus faible pendant les 50% dernières, pour avoir une vitesse de convergence plus rapide au début et un résultat plus précis finalement mais nous avons remarqué une erreur faussant nos résultats, et nous n'avons pas le temps de recalculer les hyperparamètres optimaux pour obtenir d'autres résultats. 
+
+Finalement le choix de la racine est un paramètre important puisque l'algorithme de Held et Karp risque de construire des 1-tree très différents pour des noeuds de départ différents, même si ils seront de poids similaires. La différence entre ces arbres joue une part importante dans la différence d'efficacité de la fonction *tree\_to\_tour*, puisque les tournée finalement construites pourraient être très différentes. C'est pour cela que nous avons implémenté une fonction *test\_hk* calculant toutes les tournées obtenues avec HK pour tous les noeuds de départ possibles pour des valeurs de step\_size et du nombre d'itérations maximal fixées. Cette fonction a été particulièrement utile pour identifier les tournées de poids les plus faibles possibles (comme le choix de la racine 16 dans le graphe ci-dessus)."
+
+# ╔═╡ 8ecc5eb1-b4ab-4e46-8d8c-07ad03dc916b
+
+
+# ╔═╡ 23557883-0c02-455d-aa38-a30619644f87
+md"Nous avons ainsi obtenu, avec les algorithmes de RSL et de HK les résultats présentés dans le tableau ci-dessous."
+
+# ╔═╡ 8f95be08-938d-48d3-a9ee-4ed3806ff8bc
+md"$\begin{aligned}
+&\begin{array}{cccccc}
+\hline \hline \text { Fichier } & \text { RSL } & \text { HK } & \text { Optimal } & \text{Erreur relative RSL (en \%)} & \text{ Erreur relative HK  }\\
+\hline \text{ bayg29 } & 2014 & 1620 & 1610 & 25.1 & 0.6\\
+\text{ bays29 } & 2313 & 2039 & 2020 & 14.5 & 0.9\\
+\text{ brazil58 }& 28380 & 25475 & 25395 & 11.8 & 0.3 \\
+\text{ dantzig42 }& 872 & 719 & 699 & 24.7 & 2.9\\
+\text{ fri26 }& 1102 & 937 & 937 & 17.6 & 0\\
+\text{ gr120 }& 8859 & 7363 & 6942 & 27.6 & 6.1\\
+\text{ gr17 }& 2210 & 2085 & 2085 & 6.0 & 0 \\
+\text{ gr21 }& 2998 & 2707 & 2707 & 10.7 & 0 \\
+\text{ gr24 }& 1571 & 1272 & 1272 & 23.5 & 0 \\
+\text{ gr48 }& 6450 & 5226 & 5046 & 27.8 & 3.5\\
+\text{ hk48 }& 13939 & 11525  & 11461 & 21.6 & 0.6\\
+\text{ pa561 } & 3875 & 3215 & 2763 & 40.2 & 16.4\\
+\text{ swiss42 } & 1591 & 1273 & 1273 & 25.0 & 0\\
+\hline
+\end{array}
+\end{aligned}$"
+
+# ╔═╡ 68108499-4e9d-4f3a-b1e8-854cb6f58807
+md"On peut réobtenir ces résultats avec le script *main4.jl*. Les meilleurs paramètres trouvés pour l'algorithme HK sont donnés dans le dictionnaire *dict_args_hk*, tandis qu'on réexécute la fonction *min_rsl* pour chaque instance (temps de calculs assez faible comparé aux temps de calculs de HK). Attention, il ne prend que 2 minutes à exécuter sans le fichier pa561, mais prend 40 minutes avec (on a un nombre d'itérations maximal dans l'algorithme HK assez élevé pour la taille du graphe). On a ainsi ajouté une variable booléenne calcul\_pa561 qu'on peut fixer à false si on veut obtenir tous les autres résultats rapidement."
+
+# ╔═╡ d868dfe4-d90d-4108-b359-d6f5a7b1bffb
+md"On obtient des bons résultats sur la plupart des graphes. Sur les plus petits, on obtient des tournées très proches de la tournée optimale voire optimale dans quelques cas. On remarque néanmoins que sur les plus gros graphes comme pa561 et gr120, on obtient des résultats plus éloignés de la valeur optimale. Cela est en partie dû aux temps de calcul de nos algorithmes qui nous ont empêché d'utiliser la fonction *test_hk* sur tous les noeuds ou avec des taux d'apprentissage faibles ou des nombres d'itérations élevés "
+
+# ╔═╡ c4d066fc-efc9-484b-bcfb-bd229df4baec
+
+
+# ╔═╡ 28b49375-14cd-4db7-bc8b-7e28cd1d66f7
+md"On représente ci-dessous les meilleures tournées obtenues sur les graphes sur lesquels cela est possible"
+
+# ╔═╡ fa8ff99f-75db-4f22-9499-04e5621533ac
 begin
-	graph_exemple = create_graph(joinpath(path_instances, "bayg29.tsp"))
-	poids_total(graph_exemple)
+	#bayg29 = create_graph(joinpath(path_instances, "bayg29.tsp"))
+	tour_opti_bayg29, poids_bayg29 = heldkarp(bayg29, 16, 0.01, 10000, false)
+	tour_opti_bayg29_rsl,_,_ = min_rsl(bayg29)
+	plot_graph(nodes(tour_opti_bayg29), edges(tour_opti_bayg29))
 end
 
-# ╔═╡ 2b486cf3-c08a-426b-87f2-f73cd1549d85
-arbre_exemple = kruskal(graph_exemple)
+# ╔═╡ 007dc7f5-ca8f-46a6-99f9-7c1c51131cd0
+plot_graph(nodes(tour_opti_bayg29_rsl), edges(tour_opti_bayg29_rsl))
 
-# ╔═╡ 819f9c7d-d913-496d-a69b-2830db6ebecf
-plot_graph(arbre_exemple.nodes, arbre_exemple.edges)
 
-# ╔═╡ 2832e0c9-9666-4f35-a32c-789087eaf1d8
-poids_total(arbre_exemple)
-
-# ╔═╡ 8fdb1448-1874-46d8-a291-2b368c8a9747
-md"Après ces corrections, nous avons travaillé sur l'implémentation de l'union via le rang et de la compression des chemins."
-
-# ╔═╡ bd22e5f2-e5a4-4ec2-acfb-1d72eb7e1963
-md"Tout d'abord, en ce qui concerne l'implémentation de l'union via le rang, nous avons construit une fonction *heuristique1!* qui prend en argument un dictionnaire associant à chaque sommet du graphe son rang, un dictionnaire associant à chaque sommet son parent dans l'arbre de recherche, ainsi que 2 composantes connexes de type **Connex** à fusionner. On identifie la racine de chaque composante connexe comme le sommet de rang maximal dans cette composante connexe, on compare les rangs de ces sommets et on fusionne les composantes connexes de la bonne manière en modifiant en plus le dictionnaire des parents et des rangs. On présente un exemple pratique ci-dessous : on utilise cette heuristique pour fusionner la composante connexe 1 composée des noeuds 1 et 2 où 2 est le parent de 1, et la composante connexe 2 composée de l'unique noeud 3."
-
-# ╔═╡ f3dd3618-8077-45bf-b50c-97b3c053df5e
+# ╔═╡ b81cf618-021e-459a-9ffe-6d88bf29fd36
 begin
-	node3 = Node{Any}("3", nothing)
-	connex1 = Connex([node1,node2])
-	connex2 = Connex([node3])
-	dico_parents = Dict{String,Any}("1" => "2", "2" => nothing, "3" => nothing)
-	dico_rangs = Dict{String,Any}("1" => 0, "2" => 1, "3" => 0)
+	#bays29 = create_graph(joinpath(path_instances, "bayg29.tsp"))
+	tour_opti_bays29, poids_bays29 = heldkarp(bays29, 13, 0.01, 10000, false)
+	tour_opti_bays29_rsl,_,_ = min_rsl(bays29)
+
+	plot_graph(nodes(tour_opti_bayg29), edges(tour_opti_bayg29))
 end
 
-# ╔═╡ 986e004f-887a-484f-824e-57455fbc9836
-heuristique1!(dico_rangs,dico_parents,connex1,connex2)
+# ╔═╡ f1e6608f-17ee-44c4-b8fa-bebe469e11ad
+plot_graph(nodes(tour_opti_bays29_rsl), edges(tour_opti_bays29_rsl))
 
-# ╔═╡ 63d81785-5649-480c-869b-27f4fac15f67
-dico_rangs
 
-# ╔═╡ bae898f1-cb48-4243-b611-84644673877c
-dico_parents
-
-# ╔═╡ 7ffe7a97-1a1f-4726-8e1a-c24bc104f796
-md"Nous avons ensuite créé une fonction *heuristique2!* qui prend en argument un noeud dont on cherche la racine et le dictionnaire des parents des noeuds de l'arbre et renvoie la racine du noeud en ayant correctement modifié l'arbre de recherche par compression des chemins. Pour cela, on remonte jusqu'à la racine du noeud grâce au dictionnaire des parents, avant de remplacer le parent noté dans le dictionnaire par la racine pour chaque sommet parcouru (à l'exception de la racine). On montre un exemple ci-dessous."
-
-# ╔═╡ f4591e8c-b2f2-42f5-938f-83f09248dd61
+# ╔═╡ 49e89ce2-42fe-4a60-b9b5-091bcd952611
 begin
-	node4 = Node{Any}("4", nothing)
-	node5 = Node{Any}("5", nothing)
-	dico_parents2 = Dict{String,Any}("1" => nothing, "2" => "1", "3" => "2", "4" => "2", "5" => "3")
+	dantzig42 = create_graph(joinpath(path_instances, "dantzig42.tsp"))
+	tour_opti_dantzig42, poids_dantzig42 = heldkarp(dantzig42, 35, 0.1, 1000, false)
+	tour_opti_dantzig42_rsl,_,_ = min_rsl(dantzig42)
+	plot_graph(nodes(tour_opti_dantzig42), edges(tour_opti_dantzig42))
 end
 
-# ╔═╡ 54c21dcb-d2f7-4fb0-acbf-0477779a7766
-heuristique2!(node5,dico_parents2)
-
-# ╔═╡ ad28de88-ecf7-41e9-9ba2-074831b0c9a9
-dico_parents2
-
-# ╔═╡ 21e8c286-4eba-4af5-b77b-bdb2e54b35c1
-md"Concernant les types de ces dictionnaires, nous avons fait le choix de représenter les clés des dictionnaires comme des chaînes de caractère correspondant aux noms des sommets : cela nous paraissait plus naturel pour un type de clé de dictionnaire. Le dictionnaire des rangs renvoie le rang qui est un entier. Le dictionnaire des parents, lui, ne renvoie qu'une chaîne de caractères correspondant au nom du sommet parent et non pas le noeud entier. Nous avons fait ce choix pour un peu plus de confort sur les types même si cela va à l'encontre de la philosophie d'avoir des objets riches. Cependant, ce dictionnaire des parents étant encore assez peu utilisé, nous n'avons pas été contraints par ce manque d'informations. Si nous avons besoin de plus d'informations sur les noeuds parents au cours des prochaines phases, nous modifierons cette structure pour avoir un **Dict{String,Node}**."
-
-# ╔═╡ d10398fd-4c26-4941-9d44-79c7975f721d
-md"De la même manière, comme nous n'utilisons pas la fonction heuristique2! dans nos fonctions pour l'instant, nous n'avons pas ressenti le besoin de modifier le dictionnaire des rangs lors de la modification de l'arbre de recherche. Si nous en avions besoin lors des prochaines phases, nous le modifierions dans cette fonction heuristique2!"
-
-# ╔═╡ 85d62e2a-52aa-4cbc-a112-719cdfc3c829
-md"Finalement, après avoir implémenté ces 2 heuristiques, nous avons implémenté l'algorithme de Prim. Pour cela nous avons utilisé un \"dictionnaire de priorité \" qui correspond en fait à une file de priorité. Pour cela, nous avons implémenté une fonction *popfirst!* qui prend en argument un dictionnaire dont les valeurs sont des réels, qui trouve et retire du dictionnaire la valeur minimale, et qui renvoie la clé (c'est à dire le nom du sommet dans notre cas) et la valeur minimale. On pourra ainsi rajouter ou retirer des entrées dans le dictionnaire, et accéder à l'élément de priorité minimale, qui sera celui qui nous intéressera ici." 
-
-# ╔═╡ e3b5b822-92b2-4014-944b-049faef255ee
-md"Pour implémenter l'algorithme de Prim, nous avons donc initialisé 3 dictionnaires, de rang, initialisé à 0 pour tous les sommets, de parents, initialisé à nothing pour tous les sommets et de poids minimal initialisé à Inf pour tous les sommets. Ce dernier correspond à un dictionnaire de la distance minimale entre le sommet et les sommets déjà traités. On initialise ce dictionnaire avec le sommet passé en argument comme sommet de départ (dont la valeur par défaut est le 1er sommet de la liste des noeuds du graphe passé en argument). On parcourt ainsi toutes les arêtes connectées à ce sommet pour remplacer la distance de l'autre sommet de l'arête dans le dictionnaire par le poids de l'arête considérée, et on retire finalement ce sommet de départ du dictionnaire dico\_min\_weights. A chaque itération, on va retirer l'élément de distance minimale dans ce dictionnaire, et parcourir toutes les arêtes liées à ce sommet minimal pour mettre à jour la distance minimale si le poids de l'arête est inférieur à la distance minimale déjà connue pour les sommets non déjà traités. Si l'autre sommet de l'arête a déjà été traité, alors on vérifie le poids de l'arête pour savoir s'il s'agit d'une arête qui donnait le poids minimal présent dans le dictionnaire des distances minimales à la composante connexe (s'il y en avait plusieurs on ne gardera que la dernière). On peut alors la rajouter à la liste des arêtes à garder pour former l'arbre de recouvrement minimum. Enfin, on utilise l'heuristique 1 pour rajouter le sommet identifié à la composante connexe déjà traitée."
-
-# ╔═╡ 4f4616e4-e2bd-45b6-8d55-fa72621bf1cb
-md"A chaque itération, on retire un sommet du dictionnaire des poids minimaux, qu'on traite pour l'ajouter à la composante connexe déjà incluse. La taille du dictionnaire diminue donc de 1 à chauqe itération, puisqu'à la fin de l'itération il ne contient que les sommets pas encore rajoutés à l'arbre en construction. La boucle while va donc bien se terminer et correspond bien à la condition \"tant qu'il y a des sommets non traités\". "
-
-# ╔═╡ bc222d2a-7883-4d9a-b15a-d1119588130d
-md"On note aussi que dans l'algorithme de Prim, on se contente de rajouter des sommets isolés à une composante connexe plus importante. En utilisant l'heuristique 1, on est donc sur qu'à chaque itération l'arbre de recherche décrit par dico_parents et dico_rangs sera un abre de recherche aplati avec une racine de rang 1 et tous les autres sommets déjà traités comme feuilles de rang 0 ; on a donc aucun besoin d'utiliser l'heuristique 2 ici."
-
-# ╔═╡ a58c78f5-6218-4eeb-aa64-bc7b84ccef2d
-md"On présente un exemple de l'algorithme de Prim ci-dessous, avec l'arbre de recouvrement minimal obtenu par l'algorithme de Kruskal en parallèle."
-
-# ╔═╡ ba6d71ec-8a44-4c1f-ad7b-fe76412928d6
-arbre_prim = prim(joinpath(path_instances, "bays29.tsp"))
-
-# ╔═╡ f61d14e6-0c37-41bb-9c53-8cc09a2e2580
-plot_graph(arbre_prim.nodes,arbre_prim.edges)
-
-# ╔═╡ ac521584-8dc8-48db-9139-5adaa79e4365
-arbre_kruskal = kruskal(joinpath(path_instances, "bays29.tsp"))
-
-# ╔═╡ 7032c512-e8a8-40c7-b271-eda818e419fd
-plot_graph(arbre_kruskal.nodes,arbre_kruskal.edges)
-
-# ╔═╡ e9f37aa0-c0ab-4901-b548-ef017420d3db
-poids_total(arbre_prim)
-
-# ╔═╡ 91db7dce-cead-4355-a788-d505aef8db45
-poids_total(arbre_kruskal)
-
-# ╔═╡ d741507a-7ad5-4b31-aeba-435376953de9
-md"On note qu'on a obtenu 2 arbres différents avec ces 2 algorithmes. Néanmoins, ils sont tous les 2 de même poids ce qui est un très bon indice sur le fait que ce soient effectivement des arbres de recouvrement minimaux."
-
-# ╔═╡ 9e1d1e85-48f8-43e3-90d3-9f793cc8d6fd
-md"Finalement, nous avons construit un script principal, *main3.jl*, exécutant les algorithmes de Kruskal et de Prim pour chaque instance de tsp que nous avons. Pour chaque, on teste si dans les graphes obtenus, tous les noeuds sont reliés à une arête c'est à dire s'il n'y a pas de sommet isolé. Ce n'est pas un test de connexité, mais c'est beaucoup moins coûteux et cela donne un plutôt bon indice sur la connexité du graphe, surtout vu la construction lors des algorithmes où on fusionnait les composantes connexes 1 à 1. On teste aussi si le nombre d'arêtes est bien égal au nombre de noeuds -1, qui indiquera, si on admet que le graphe obtenu est connexe, qu'il est aussi acyclique donc qu'il s'agit d'un arbre de recouvrement. Enfin, on teste si les poids minimaux renvoyés par ces 2 algorithmes sont identiques, ce qui sera un très bon indice du fait qu'il s'agit effectivement des poids minimaux."
-
-# ╔═╡ 00fe746b-f971-45c7-b1da-ac243361266c
-md"On a aussi rajouté une balise time pour mesurer le temps d'exécution de chaque algorithme sur chaque fichier. On n'observe pas de différences significatives entre les deux algorithmes sur la majorité des instances, et sur le reste ce n'est pas toujours le même algorithme qui est le plus rapide. On observe enfin qu'en dehors du fichier \"pa561\" qui s'exécute en une quarantaine de secondes, pour tous les autres fichiers on peut trouver des arbres minimaux en moins d'une seconde, voire beaucoup moins sur les plus petites instances, ce qui est plutôt bon signe pour les temps d'exécution de la prochaine phase."
-
-# ╔═╡ 015dd6d5-530a-4976-b871-f6fb9496723f
-graphe = create_graph(joinpath(path_instances,"bayg29.tsp"))
-
-# ╔═╡ 4876b98e-ef02-4870-871d-19bfc97b0873
+# ╔═╡ fe09ea71-1ec2-42b1-9b7c-1a93d8bf68de
+plot_graph(nodes(tour_opti_dantzig42_rsl), edges(tour_opti_dantzig42_rsl))
 
 
-# ╔═╡ b6b78fbe-2829-4293-8650-1bdfb0f08066
-tour_min,poids_min,racine_min = test(graphe)
+# ╔═╡ 13a80dc6-9701-4e5f-95b7-ebf1fe53144d
+begin
+	gr120 = create_graph(joinpath(path_instances, "gr120.tsp"))
+	tour_opti_gr120, poids_gr120 = heldkarp(gr120, 61, 1., 1000, false)
+	tour_opti_gr120_rsl,_,_ = min_rsl(gr120)
 
-# ╔═╡ 7314888c-2cc5-40f6-8bff-af51b96b8336
-plot_graph(tour_min.nodes,tour_min.edges)
+	plot_graph(nodes(tour_opti_gr120), edges(tour_opti_gr120))
+end
 
-# ╔═╡ bb5c27db-96ac-45e7-aaa9-bf8d455f7e22
+# ╔═╡ 3bfb840b-1671-4c43-b074-276964589c31
+plot_graph(nodes(tour_opti_gr120_rsl), edges(tour_opti_gr120_rsl))
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1027,56 +1068,57 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═3c04ef1e-26cf-11ec-269d-714e657e0a90
+# ╟─3c04ef1e-26cf-11ec-269d-714e657e0a90
 # ╟─edb29e94-a3b5-42cf-bb38-a4bbe9753dd1
-# ╠═52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
-# ╠═ac10181c-501b-44b0-a0f9-5257d37329aa
-# ╠═02181ed8-1f58-4bde-ba30-0d33f6cce8d7
-# ╠═bd96c780-678d-459b-aa23-a166751da087
+# ╟─52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
+# ╟─ac10181c-501b-44b0-a0f9-5257d37329aa
+# ╟─02181ed8-1f58-4bde-ba30-0d33f6cce8d7
+# ╟─bd96c780-678d-459b-aa23-a166751da087
 # ╟─0c186ad3-5494-4fa5-9791-5c6a1fbc4fab
 # ╟─abc12fa3-0cdd-4c3f-8dc6-6fe41cde8ec9
 # ╟─ad90a1be-e044-4d63-920f-5b6c9068b519
 # ╟─8914a271-58db-45d0-a227-804ac9cdac5b
 # ╟─4c380476-c375-4da3-a58e-acdb303d3a76
 # ╟─f345a0a0-2342-4488-ac0a-7b3c4f5fe381
+# ╟─b64118ca-0d04-4c8c-b375-e267e162c7f6
 # ╟─ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
-# ╠═916261ac-e4c4-4fd6-8e1f-ba9600ebd46b
-# ╟─baf7959e-44c8-45d7-9eef-d681a1d0805d
-# ╟─3f5987dc-cc9f-4be9-9602-c260aba63177
-# ╠═812748d8-a029-4efb-ae10-8f0b6b4445a6
-# ╠═2b486cf3-c08a-426b-87f2-f73cd1549d85
-# ╠═819f9c7d-d913-496d-a69b-2830db6ebecf
-# ╠═2832e0c9-9666-4f35-a32c-789087eaf1d8
-# ╟─8fdb1448-1874-46d8-a291-2b368c8a9747
-# ╟─bd22e5f2-e5a4-4ec2-acfb-1d72eb7e1963
-# ╠═f3dd3618-8077-45bf-b50c-97b3c053df5e
-# ╠═986e004f-887a-484f-824e-57455fbc9836
-# ╠═63d81785-5649-480c-869b-27f4fac15f67
-# ╠═bae898f1-cb48-4243-b611-84644673877c
-# ╟─7ffe7a97-1a1f-4726-8e1a-c24bc104f796
-# ╠═f4591e8c-b2f2-42f5-938f-83f09248dd61
-# ╠═54c21dcb-d2f7-4fb0-acbf-0477779a7766
-# ╠═ad28de88-ecf7-41e9-9ba2-074831b0c9a9
-# ╟─21e8c286-4eba-4af5-b77b-bdb2e54b35c1
-# ╟─d10398fd-4c26-4941-9d44-79c7975f721d
-# ╟─85d62e2a-52aa-4cbc-a112-719cdfc3c829
-# ╟─e3b5b822-92b2-4014-944b-049faef255ee
-# ╟─4f4616e4-e2bd-45b6-8d55-fa72621bf1cb
-# ╟─bc222d2a-7883-4d9a-b15a-d1119588130d
-# ╟─a58c78f5-6218-4eeb-aa64-bc7b84ccef2d
-# ╟─ba6d71ec-8a44-4c1f-ad7b-fe76412928d6
-# ╟─f61d14e6-0c37-41bb-9c53-8cc09a2e2580
-# ╟─ac521584-8dc8-48db-9139-5adaa79e4365
-# ╟─7032c512-e8a8-40c7-b271-eda818e419fd
-# ╠═e9f37aa0-c0ab-4901-b548-ef017420d3db
-# ╠═91db7dce-cead-4355-a788-d505aef8db45
-# ╟─d741507a-7ad5-4b31-aeba-435376953de9
-# ╟─9e1d1e85-48f8-43e3-90d3-9f793cc8d6fd
-# ╟─00fe746b-f971-45c7-b1da-ac243361266c
-# ╠═015dd6d5-530a-4976-b871-f6fb9496723f
-# ╠═4876b98e-ef02-4870-871d-19bfc97b0873
-# ╠═b6b78fbe-2829-4293-8650-1bdfb0f08066
-# ╠═7314888c-2cc5-40f6-8bff-af51b96b8336
-# ╠═bb5c27db-96ac-45e7-aaa9-bf8d455f7e22
+# ╟─69d54b10-0cc5-48b8-b3b3-6c53945c2e65
+# ╟─085fe42d-c57f-4bc6-8a63-72f48fc88e2a
+# ╟─a9b98776-5e37-4925-8bd4-c667bd20d8a7
+# ╟─068be080-b311-4a5d-af1d-e9cec2a2eda6
+# ╟─37195aed-5d39-44f7-a75f-92122ab7c7d3
+# ╟─6a46e8ce-5e73-4ab2-b47c-3003ee93da84
+# ╟─2fb5056b-4ea9-4aeb-b122-08dc7ea695ce
+# ╟─5fd34b54-e8f8-4939-bcd6-e7368a7af5a3
+# ╠═473d557d-3e50-451a-9eab-7ab44240dfb8
+# ╟─aa812e7a-15e4-492b-912d-b6139a1de7e4
+# ╟─ec50db94-f394-4c10-927b-1e1fa34ad728
+# ╠═ba9461a0-31ff-4974-82e6-ca02807c9c5d
+# ╠═6ff5dddf-9d43-485d-9fb0-c7d9183747d8
+# ╟─a8e36544-c43f-469b-80b6-e4a8fe801ff8
+# ╠═a520301b-2bc3-452f-aef9-1be9e10046f7
+# ╠═e3bf6e4a-4da9-4897-9c86-3863a1373031
+# ╟─018f5c9d-7d88-4081-9721-87944c5e90d0
+# ╟─7c089bc5-9252-469a-80cd-c669285b3c31
+# ╟─8943125d-233d-439f-8641-5028ce556fb1
+# ╟─60534fee-514d-4fcc-8555-2bd82dc1d130
+# ╠═c2a867c4-0d89-4117-a976-d32beac11e5a
+# ╠═26168326-e262-4d78-8db5-11da9f57c576
+# ╟─a83a9354-ef22-43bf-b741-99026fdff382
+# ╟─8ecc5eb1-b4ab-4e46-8d8c-07ad03dc916b
+# ╟─23557883-0c02-455d-aa38-a30619644f87
+# ╟─8f95be08-938d-48d3-a9ee-4ed3806ff8bc
+# ╟─68108499-4e9d-4f3a-b1e8-854cb6f58807
+# ╟─d868dfe4-d90d-4108-b359-d6f5a7b1bffb
+# ╟─c4d066fc-efc9-484b-bcfb-bd229df4baec
+# ╟─28b49375-14cd-4db7-bc8b-7e28cd1d66f7
+# ╠═fa8ff99f-75db-4f22-9499-04e5621533ac
+# ╠═007dc7f5-ca8f-46a6-99f9-7c1c51131cd0
+# ╠═b81cf618-021e-459a-9ffe-6d88bf29fd36
+# ╠═f1e6608f-17ee-44c4-b8fa-bebe469e11ad
+# ╠═49e89ce2-42fe-4a60-b9b5-091bcd952611
+# ╠═fe09ea71-1ec2-42b1-9b7c-1a93d8bf68de
+# ╠═13a80dc6-9701-4e5f-95b7-ebf1fe53144d
+# ╠═3bfb840b-1671-4c43-b074-276964589c31
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

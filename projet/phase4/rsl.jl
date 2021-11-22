@@ -49,7 +49,7 @@ function rsl(graphe::Graph, racine::Node, algo::String)
     tournee
 end
 
-
+"""Teste les conditions d'inégalité triangulaire sur tous les sommets du graphe. Suppose le graphe complet."""
 function test_conditions(graph::Graph)
     mat = mat_adjacence(graph)
     n = length(nodes(graph))
@@ -75,7 +75,7 @@ function test_conditions(graph::Graph)
 
 end
 """Pour un graphe, utilise l'algorithme de RSL en prenant chaque noeud comme noeud de départ et en utilisant Prim et Kruskal et renvoie
-la tournée de poids minimal trouvée
+la tournée de poids minimal trouvée.
 """
 function min_rsl(graphe::Graph)
     T = typeof(data(nodes(graphe)[1]))
