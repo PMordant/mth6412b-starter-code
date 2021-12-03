@@ -2,8 +2,8 @@ using Random, FileIO, Images, ImageView, ImageMagick
 
 """Compute the similarity score between two pixels."""
 function compare_pixels(p1, p2)
-	r1, g1, b1 = red(p1), green(p1), blue(p1)
-	r2, g2, b2 = red(p2), green(p2), blue(p2)
+	r1, g1, b1 = Float64(red(p1)), Float64(green(p1)), Float64(blue(p1))
+	r2, g2, b2 = Float64(red(p2)), Float64(green(p2)), Float64(blue(p2))
 	return abs(r1-r2) + abs(g1-g2) + abs(b1-b2)
 end
 
@@ -11,7 +11,7 @@ end
 function compare_columns(col1, col2)
 	score = 0
 	nb_row = length(col1)
-	for row = 1 : nb_row - 1
+	for row = 1 : nb_row 
 		score += compare_pixels(col1[row], col2[row])
 	end
 	return score
@@ -38,7 +38,7 @@ function write_tour(filename::String, tour::Array{Int}, cost::Float32)
 	write(file,"DIMENSION : $length_tour\n")
 	write(file,"TOUR_SECTION\n")
 	for node in tour
-		write(file, "$(node + 1)\n")
+		write(file, "$(node)\n")
 	end
 	write(file, "-1\nEOF\n")
 	close(file)

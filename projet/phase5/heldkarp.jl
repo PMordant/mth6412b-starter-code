@@ -162,7 +162,7 @@ améliorer la performance de l'algorithme) et un booléen pour afficher ou non l
 Applique l'algorithme de Held et Karp sur ce graphe avec ces paramètres et transforme le 1_tree obtenu en tournée avec la fonction 
 tree_to_tour avant de reconstruire le graphe pour avoir une tournée avec les poids exacts des arêtes.
 """
-function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, afficher::Bool)
+function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, afficher::Bool=false)
     T = typeof(data(racine))
     k = 0
     Pi = zeros(length(nodes(graph)))
@@ -188,7 +188,7 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
 
         graph_modifie= Graph(name(graph_modifie),nodes(graph_modifie),lis_edges)
         k += 1
-
+        
         if afficher && k%(nb_iter//10) == 0
             println(W)
         end
@@ -197,7 +197,7 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
 
 
     end
-    println("Maximum obtenu pour w :"*string(W))
+    #println("Maximum obtenu pour w :" *string(W))
     tour = tree_to_tour(matrice_adjacence, min1_tree,array_edge_tree(min1_tree))
 
     lis_edges_reel = Edge{T}[]
@@ -210,7 +210,7 @@ function heldkarp(graph::Graph, racine::Node, step_size::Float64,nb_iter::Int, a
 end
 
 """ Permet de prendre l'indice du noeud de départ plutôt que le noeud de départ en argument."""
-function heldkarp(graph::Graph, ind_racine::Int, step_size::Float64,nb_iter::Int, afficher::Bool)
+function heldkarp(graph::Graph, ind_racine::Int, step_size::Float64,nb_iter::Int, afficher::Bool=false)
     heldkarp(graph,nodes(graph)[ind_racine],step_size,nb_iter,afficher)
 end
 
@@ -235,3 +235,5 @@ function test_hk(graphe::Graph,step_size::Float64,nb_iter::Int)
 
     graph_min, poids_min, node_min
 end
+
+
