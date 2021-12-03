@@ -14,7 +14,9 @@ end
 
 # ╔═╡ 52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
 begin
-	path_fonc = joinpath("phase4", "heldkarp.jl")
+	path_fonc = joinpath("phase5", "tour_to_images.jl")
+	path_instances = joinpath("shredder-julia", "images", "original")
+	path_recons = joinpath("shredder-julia", "images", "reconstructed")
 	include(path_fonc)
 end
 
@@ -23,9 +25,6 @@ end
 
 # ╔═╡ ac10181c-501b-44b0-a0f9-5257d37329aa
 
-
-# ╔═╡ 02181ed8-1f58-4bde-ba30-0d33f6cce8d7
-path_instances = joinpath("instances", "stsp")
 
 # ╔═╡ bd96c780-678d-459b-aa23-a166751da087
 md"# Ecole polytechnique de Montréal"
@@ -40,22 +39,21 @@ md"## Rapport de projet"
 md" ### Pierre Mordant & Mahamadou Sarité"
 
 # ╔═╡ 8914a271-58db-45d0-a227-804ac9cdac5b
-md"### Phase 4"
+md"### Phase 5"
 
 # ╔═╡ 4c380476-c375-4da3-a58e-acdb303d3a76
-md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/Phase-4)"
+md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/Phase-5) La fonction main et ce notebook ne fonctionneront pas à cause du gitignore dans les dossiers contenant les images."
 
 # ╔═╡ f345a0a0-2342-4488-ac0a-7b3c4f5fe381
 begin
-md" Dans cette troisième phase du projet sur le problème du voyageur de commerce symétrique, nous avons implémenté les algorithmes de RSL et de HK pour déterminer une tournée dont le coût approche le coût minimal d'une tournée.
-  1. Nous avons d'abord effectué quelques modifications/corrections des phases précédentes.
-  2. Nous avons implémenté les deux algorithmes.
-  3. Nous avons effectué des tests de nos implémentation sur les instances de tsp données."
-  
+md" Dans cette cinquième phase du projet sur le problème du voyageur de commerce symétrique, nous avons appliqué nos algorithmes de recherche de tournée minimale au problème des images déchiquetées.
+  1. Nous avons d'abord créé des fonctions permettant de retrouver l'ordre des sommets parcourus à partir d'une tournée puis de reconstruire directement l'image.
+  2. Nous avons fait tourner nos algorithmes pour trouver les paramètres permettant d'obtenir les images de départ, et nous les avons résumés dans une fonction principale
+"
 end
 
 # ╔═╡ b64118ca-0d04-4c8c-b375-e267e162c7f6
-md" Tout d'abord, nous avons effectué quelques modifications et corrections de notre phase 3. Nous avons ainsi enlevé les dernières balises @test présentes dans le corps des fonctions, et nous avons enlevé les références aux *graph.nodes* pour utiliser les fonctions *nodes(graph)* et les équivalents sur les attributs des types **Node**, **Edge**, **Graph** et **Connex**"
+md" Tout d'abord, nous avons d'abord créé une fonction permettant de retrouver l'ordre des sommets parcourus"
 	
 
 # ╔═╡ ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
@@ -79,20 +77,8 @@ md"Nous avons ensuite travaillé pour implémenter l'algorithme de RSL pour calc
 # ╔═╡ 6a46e8ce-5e73-4ab2-b47c-3003ee93da84
 md" Nous avons ensuite implémenté la fonction rsl : on construit un arbre de recouvrement minimal avec un algorithme au choix entre Prim et Kruskal (noeud de départ passé en argument pour Prim) puis on parcourt l'arbre avec la fonction *preordre* pour récupérer une liste de noeuds visités dans l'ordre. On rajoute finalement les arêtes correspondantes avant de renvoyer la tournée obtenue. On présente une tournée obtenue de cette manière ci-dessous à partir du graphe bayg29. "
 
-# ╔═╡ 2fb5056b-4ea9-4aeb-b122-08dc7ea695ce
-bayg29 = create_graph(joinpath(path_instances,"bayg29.tsp"))
-
-# ╔═╡ 5fd34b54-e8f8-4939-bcd6-e7368a7af5a3
-tour_bayg29 = rsl(bayg29, nodes(bayg29)[1], "prim" )
-
-# ╔═╡ 473d557d-3e50-451a-9eab-7ab44240dfb8
-plot_graph(nodes(tour_bayg29),edges(tour_bayg29))
-
 # ╔═╡ aa812e7a-15e4-492b-912d-b6139a1de7e4
 md" Pour que cet algorithme fonctionne, il est nécessaire que le graphe passé en argument soit complet, ce qui est le cas de tous les graphes disponibles (sauf brg180 sur lequel nous avons un problème de construction et que nous ignorerons dans la suite). On ne vérifie donc pas cette condition. On vérifie cependant que l'inégalité triangulaire est vérifiée pour les graphes considérés avec la fonction *test_conditions* qui renvoie (true,0,0,0) si l'inégalité triangulaire est vérifiée pour tous les sommets, et false avec un exemple de triplets d'indices pour lesquels elle n'est pas vérifiée sinon."
-
-# ╔═╡ ec50db94-f394-4c10-927b-1e1fa34ad728
-bays29 = create_graph(joinpath(path_instances,"bays29.tsp"))
 
 # ╔═╡ ba9461a0-31ff-4974-82e6-ca02807c9c5d
 test_conditions(bayg29)
@@ -425,9 +411,9 @@ version = "0.21.0+0"
 
 [[Glib_jll]]
 deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "7bf67e9a481712b3dbe9cb3dac852dc4b1162e02"
+git-tree-sha1 = "74ef6288d071f58033d54fd6708d4bc23a8b8972"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.68.3+0"
+version = "2.68.3+1"
 
 [[Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -448,9 +434,9 @@ version = "0.9.16"
 
 [[HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg"]
-git-tree-sha1 = "8a954fed8ac097d5be04921d595f741115c1b2ad"
+git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
-version = "2.8.1+0"
+version = "2.8.1+1"
 
 [[HypertextLiteral]]
 git-tree-sha1 = "f6532909bf3d40b308a0f360b6a0e626c0e263a8"
@@ -1068,11 +1054,10 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─3c04ef1e-26cf-11ec-269d-714e657e0a90
-# ╟─edb29e94-a3b5-42cf-bb38-a4bbe9753dd1
-# ╟─52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
+# ╠═3c04ef1e-26cf-11ec-269d-714e657e0a90
+# ╠═edb29e94-a3b5-42cf-bb38-a4bbe9753dd1
+# ╠═52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
 # ╟─ac10181c-501b-44b0-a0f9-5257d37329aa
-# ╟─02181ed8-1f58-4bde-ba30-0d33f6cce8d7
 # ╟─bd96c780-678d-459b-aa23-a166751da087
 # ╟─0c186ad3-5494-4fa5-9791-5c6a1fbc4fab
 # ╟─abc12fa3-0cdd-4c3f-8dc6-6fe41cde8ec9
@@ -1080,7 +1065,7 @@ version = "0.9.1+5"
 # ╟─8914a271-58db-45d0-a227-804ac9cdac5b
 # ╟─4c380476-c375-4da3-a58e-acdb303d3a76
 # ╟─f345a0a0-2342-4488-ac0a-7b3c4f5fe381
-# ╟─b64118ca-0d04-4c8c-b375-e267e162c7f6
+# ╠═b64118ca-0d04-4c8c-b375-e267e162c7f6
 # ╟─ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
 # ╟─69d54b10-0cc5-48b8-b3b3-6c53945c2e65
 # ╟─085fe42d-c57f-4bc6-8a63-72f48fc88e2a
@@ -1088,11 +1073,7 @@ version = "0.9.1+5"
 # ╟─068be080-b311-4a5d-af1d-e9cec2a2eda6
 # ╟─37195aed-5d39-44f7-a75f-92122ab7c7d3
 # ╟─6a46e8ce-5e73-4ab2-b47c-3003ee93da84
-# ╟─2fb5056b-4ea9-4aeb-b122-08dc7ea695ce
-# ╟─5fd34b54-e8f8-4939-bcd6-e7368a7af5a3
-# ╠═473d557d-3e50-451a-9eab-7ab44240dfb8
 # ╟─aa812e7a-15e4-492b-912d-b6139a1de7e4
-# ╟─ec50db94-f394-4c10-927b-1e1fa34ad728
 # ╠═ba9461a0-31ff-4974-82e6-ca02807c9c5d
 # ╠═6ff5dddf-9d43-485d-9fb0-c7d9183747d8
 # ╟─a8e36544-c43f-469b-80b6-e4a8fe801ff8
