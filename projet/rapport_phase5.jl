@@ -10,21 +10,20 @@ using PlutoUI
 using Plots
 using Markdown
 using InteractiveUtils
+using FileIO
+using Images
+using ImageMagick
+using ImageView
 end
 
 # ╔═╡ 52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
 begin
 	path_fonc = joinpath("phase5", "tour_to_images.jl")
-	path_instances = joinpath("shredder-julia", "images", "original")
+	path_instances = joinpath("shredder-julia", "tsp", "instances")
+	path_orig = joinpath("shredder-julia", "images", "original")
 	path_recons = joinpath("shredder-julia", "images", "reconstructed")
 	include(path_fonc)
 end
-
-# ╔═╡ edb29e94-a3b5-42cf-bb38-a4bbe9753dd1
-
-
-# ╔═╡ ac10181c-501b-44b0-a0f9-5257d37329aa
-
 
 # ╔═╡ bd96c780-678d-459b-aa23-a166751da087
 md"# Ecole polytechnique de Montréal"
@@ -42,7 +41,7 @@ md" ### Pierre Mordant & Mahamadou Sarité"
 md"### Phase 5"
 
 # ╔═╡ 4c380476-c375-4da3-a58e-acdb303d3a76
-md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/Phase-5) La fonction main et ce notebook ne fonctionneront pas à cause du gitignore dans les dossiers contenant les images."
+md"Notre code ainsi que ce carnet Pluto sont disponibles sur [ce lien](https://github.com/PMordant/mth6412b-starter-code/tree/Phase-5). La fonction main et ce notebook ne fonctionneront pas à cause du gitignore dans les dossiers contenant les images. Il faudra recopier le dossier shredder-julia avec les images et les instances pour qu'ils fonctionnent."
 
 # ╔═╡ f345a0a0-2342-4488-ac0a-7b3c4f5fe381
 begin
@@ -53,177 +52,116 @@ md" Dans cette cinquième phase du projet sur le problème du voyageur de commer
 end
 
 # ╔═╡ b64118ca-0d04-4c8c-b375-e267e162c7f6
-md" Tout d'abord, nous avons d'abord créé une fonction permettant de retrouver l'ordre des sommets parcourus"
+md" Tout d'abord, nous avons d'abord créé une fonction *reconstruct\_order* permettant de retrouver l'ordre des sommets parcourus dans une tournée en partant du noeud 1. A noter que notre fonction *create_graph* ne crée pas de noeud 0 : tous les noeuds sont donc augmentés de 1. L'ordre de parcours est choisi au hasard : certaines des nos images reconstruites seront donc le miroir des images originales."
 	
 
+# ╔═╡ a5c01f24-ff88-4810-aabe-66c8d8957e78
+begin
+	alp = create_graph(joinpath(path_instances,"abstract-light-painting.tsp"))
+	tour = heldkarp(alp, 1, 0.1,10)[1]
+	reconstruct_order(tour)
+end
+
 # ╔═╡ ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
-md"Question sur le rang maximal dans un arbre avec l'heuristique 1 : tous les rangs sont initialisés à 0. Quand on appellera l'algorithme de Prim, on aura exactement n-1 itérations avec n le nombre de sommets de l'arbre, donc n-1 appels à la fonction *heuristique1!*. Or, à chaque appel de *heuristique1!*, le rang d'un noeud augmente au plus de 1. Le rang d'un noeud est donc d'au plus n-1."
+md"Ensuite nous avons utilisé cette fonction, ainsi que les fonctions données dans le fichier *tools.jl* pour reconstruire l'image en l'enregistrant dans le dossier images reconstruites du dossier shredder-julia . Nous avons modifié la fonction *write_tour* pour prendre en compte que le noeud fictif est le noeud 1 et pas le noeud 0. "
 
 # ╔═╡ 69d54b10-0cc5-48b8-b3b3-6c53945c2e65
-md"De plus, on commence avec $n$ composantes connexes avec chacune 1 sommet. Or, le rang d'un sommet n'augmente que quand on fusionne deux composantes connexes dont les racines ont le même rang. On peut montrer par récurrence, que la racine d'une composante connexe est de rang $k$ si le nombre de sommets de la composante connexe est supérieur ou égal à $2^k$ . L'initialisation est bien vérifiée, et une composante connexe a sa racine de rang $k+1$ si et seulement si elle a été créée par la fusion de 2 composantes connexes de rang $k$, comprenant donc au moins $2^k$ sommets par hypothèse de récurrence. Elle contient donc au moins $2^{k+1}$ sommets ce qui prouve l'hérédité. En reformulant, le rang d'un noeud dans un arbre de taille n est borné par $\lfloor log_{2}(n) \rfloor$" 
+md"Nous avons ensuite cherché les paramètres permettant d'obtenir les meilleures tournées minimales pour ces instances. On présente ci-dessous les poids des tournées obtenues, toutes identifiées comme tournée minimale par l'algorithme de Held et Karp, ainsi que les scores donnés par la fonction *score\_picture* corrigée sur les images originales et reconstruites (qui sont donc égaux)." 
 
-# ╔═╡ 085fe42d-c57f-4bc6-8a63-72f48fc88e2a
-md"Enfin, sur l'utilité de la fonction heuristique1! placée à la fin de l'algorithme de Prim, elle permet de construire l'arbre de recherche de façon efficace pour avoir un arbre de recherche le moins profond possible. Ainsi la composante connexe *connex\_deja\_traitee* est construite de manière optimale."
-
-# ╔═╡ a9b98776-5e37-4925-8bd4-c667bd20d8a7
-
-
-# ╔═╡ 068be080-b311-4a5d-af1d-e9cec2a2eda6
-
-
-# ╔═╡ 37195aed-5d39-44f7-a75f-92122ab7c7d3
-md"Nous avons ensuite travaillé pour implémenter l'algorithme de RSL pour calculer une tournée à partir d'un arbre de recouvrement minimal d'un graphe. Nous avons ainsi implémenté une fonction *preordre* parcourant un arbre dont la racine est donnée en argument et indiquant la liste des noeuds visités dans l'ordre : on rajoute la racine à la liste, puis on parcourt les arêtes reliées à cette racine et pour chacune on fait un appel à *preordre* sur le sous-graphe auquel on a enlevé cette arête et dont la racine était l'autre extrêmité de l'arête. On fera ainsi un parcours en préordre de cette composante connexe, avant de revenir aux autres fils de la racine. "
-
-# ╔═╡ 6a46e8ce-5e73-4ab2-b47c-3003ee93da84
-md" Nous avons ensuite implémenté la fonction rsl : on construit un arbre de recouvrement minimal avec un algorithme au choix entre Prim et Kruskal (noeud de départ passé en argument pour Prim) puis on parcourt l'arbre avec la fonction *preordre* pour récupérer une liste de noeuds visités dans l'ordre. On rajoute finalement les arêtes correspondantes avant de renvoyer la tournée obtenue. On présente une tournée obtenue de cette manière ci-dessous à partir du graphe bayg29. "
-
-# ╔═╡ aa812e7a-15e4-492b-912d-b6139a1de7e4
-md" Pour que cet algorithme fonctionne, il est nécessaire que le graphe passé en argument soit complet, ce qui est le cas de tous les graphes disponibles (sauf brg180 sur lequel nous avons un problème de construction et que nous ignorerons dans la suite). On ne vérifie donc pas cette condition. On vérifie cependant que l'inégalité triangulaire est vérifiée pour les graphes considérés avec la fonction *test_conditions* qui renvoie (true,0,0,0) si l'inégalité triangulaire est vérifiée pour tous les sommets, et false avec un exemple de triplets d'indices pour lesquels elle n'est pas vérifiée sinon."
-
-# ╔═╡ ba9461a0-31ff-4974-82e6-ca02807c9c5d
-test_conditions(bayg29)
-
-# ╔═╡ 6ff5dddf-9d43-485d-9fb0-c7d9183747d8
-test_conditions(bays29)
-
-# ╔═╡ a8e36544-c43f-469b-80b6-e4a8fe801ff8
-md" Cette condition d'inégalité triangulaire n'est pas nécessaire pour garantir que l'algorithme de RSL tourne : elle est juste nécessaire pour garantir que la tournée obtenue est bien de poids au plus 2 fois supérieur à celui de la tournée optimale. On n'inclut donc pas ce test d'inégalité triangulaire dans la fonction *rsl*. On l'inclut cependant dans la fonction *min_rsl* : cette fonction prend en argument un graphe, et calcule toutes les tournées qu'on peut obtenir en prenant tous les noeuds comme noeud de départ et en utilisant Prim et Kruskal, et renvoie la tournée minimale obtenue, ainsi que son poids et le noeud de départ. Au début de cette fonction, on rajoute un test de l'inégalité triangulaire, pour afficher un avertissement si celle-ci n'est pas vérifiée. On montre un exemple d'une tournée ainsi obtenue ci-dessous." 
-
-# ╔═╡ a520301b-2bc3-452f-aef9-1be9e10046f7
-tour_min_bayg29, poids_min_bayg29, noeud_depart_bayg29 = min_rsl(bayg29)
-
-# ╔═╡ e3bf6e4a-4da9-4897-9c86-3863a1373031
-plot_graph(nodes(tour_min_bayg29),edges(tour_min_bayg29))
-
-# ╔═╡ 018f5c9d-7d88-4081-9721-87944c5e90d0
-md"On a cependant constaté que les tournées trouvées avec *min_rsl* sont toutes moins de 2 fois supérieures au poids de la tournée optimale. On présente tous les résultats obtenus à la fin de ce rapport."
-
-# ╔═╡ 7c089bc5-9252-469a-80cd-c669285b3c31
-
-
-# ╔═╡ 8943125d-233d-439f-8641-5028ce556fb1
-
-
-# ╔═╡ 60534fee-514d-4fcc-8555-2bd82dc1d130
- md"Nous avons ensuite travaillé sur l'implémentation de l'algorithme de Held et Karp. On a une fonction w qui calcule le poids d'un 1-tree avec des pénalités sur les sommets dont les degrés sont différents de 2. On sait que cette fonction est toujours inférieure au poids de la tournée optimale et que si elle atteint ce poids, cela signifie que l'on a trouvé la tournée optimale. Pour cela, nous avons commencé par construire une fonction *min1tree* qui prend en argument un graphe et une racine. Elle calcule un arbre de recouvrement minimal (avec l'algorithme de Prim et de noeud de départ par défaut) sur le sous-graphe auquel on a enlevé la racine, puis rajoute les 2 arêtes de coûts minimaux reliées à cette racine pour former un 1-tree.   
-
-On construit ensuite la fonction *heldkarp* : cette fonction va calculer un 1-tree minimal avec la fonction *min1tree* à chaque itération. Tant que ce 1-tree n'est pas une tournée, on va modifier les arêtes pour pénaliser les noeuds de degrés différents de 2. Le vecteur Pi dans le code garde en mémoire les pénalités appliquées à chaque noeud. On va ainsi augmenter la valeur de W, qui est la meilleure évaluation du poids d'un 1-tree ainsi obtenu, auquel on enlève les pénalités appliquées. Une fois qu'on a obtenu une tournée, ou au bout d'un nombre d'itérations maximal, on renvoie le dernier 1-tree obtenu. On a ainsi aucune garantie que ce 1-tree soit une tournée, on va donc utiliser la fonction *tree\_to\_tour* qui transforme un 1_tree ressemblant beaucoup en tournée de manière intuitive. On obtient ainsi une tournée de poids proche du poids optimal.  
-
-On avait construit la fonction *tree\_to\_tour*  de la manière suivante : on parcourt tous les noeuds de degré 1 (normalement peu nombreux après les itérations de *heldkarp*), et on remonte le 1-tree jusqu'à trouver un noeud de degré supérieur ou égal à 3 ; on va alors supprimer une arête reliée à ce noeud, et en rajouter une entre le sommet de degré 1 et l'autre extrêmité de l'arête supprimée. Le choix de cette arête est fait de manière à minimiser le poids total du graphe, et cela ne peut pas être l'arête d'où l'on vient (on détruirait alors la connexité du graphe). 
-
-On présente une tournée ainsi obtenue sur bayg29 ci-dessous." 
-
-# ╔═╡ c2a867c4-0d89-4117-a976-d32beac11e5a
-tour_hk_bayg29, poids_hk_bayg29 = heldkarp(bayg29, 16,0.01,10000, false)
-
-# ╔═╡ 26168326-e262-4d78-8db5-11da9f57c576
-plot_graph(nodes(tour_hk_bayg29), edges(tour_hk_bayg29))
-
-# ╔═╡ a83a9354-ef22-43bf-b741-99026fdff382
-md"La fonction heldkarp dépend ainsi de 3 paramètres : le choix du noeud de départ, le choix du taux d'apprentissage step\_size et le nombre d'itérations maximal. Le nombre d'itérations maximal donne un temps maximal d'éxécution à l'algorithme : il peut ainsi être augmenté sur des plus petits graphes. 
-
-Le taux d'apprentissage indique la vitesse de convergence vers la meilleure valeur de w : plus elle est petite, plus la convergence va être lente. Cependant, plus elle est petite, plus on pourra avoir une bonne approximation de la valeur optimale de w si on se donne un nombre d'itérations élevé. Ici, nous avons fait le choix de garder un taux d'apprentissage constant pendant toutes les itérations. Nous avions aussi essayé de modifier ce taux d'apprentissage pour qu'il soit plus élevé pendant les 10% premières itérations, et plus faible pendant les 50% dernières, pour avoir une vitesse de convergence plus rapide au début et un résultat plus précis finalement mais nous avons remarqué une erreur faussant nos résultats, et nous n'avons pas le temps de recalculer les hyperparamètres optimaux pour obtenir d'autres résultats. 
-
-Finalement le choix de la racine est un paramètre important puisque l'algorithme de Held et Karp risque de construire des 1-tree très différents pour des noeuds de départ différents, même si ils seront de poids similaires. La différence entre ces arbres joue une part importante dans la différence d'efficacité de la fonction *tree\_to\_tour*, puisque les tournée finalement construites pourraient être très différentes. C'est pour cela que nous avons implémenté une fonction *test\_hk* calculant toutes les tournées obtenues avec HK pour tous les noeuds de départ possibles pour des valeurs de step\_size et du nombre d'itérations maximal fixées. Cette fonction a été particulièrement utile pour identifier les tournées de poids les plus faibles possibles (comme le choix de la racine 16 dans le graphe ci-dessus)."
-
-# ╔═╡ 8ecc5eb1-b4ab-4e46-8d8c-07ad03dc916b
-
-
-# ╔═╡ 23557883-0c02-455d-aa38-a30619644f87
-md"Nous avons ainsi obtenu, avec les algorithmes de RSL et de HK les résultats présentés dans le tableau ci-dessous."
-
-# ╔═╡ 8f95be08-938d-48d3-a9ee-4ed3806ff8bc
+# ╔═╡ 283c79ec-cfd6-4008-9a23-add473ae1f27
 md"$\begin{aligned}
-&\begin{array}{cccccc}
-\hline \hline \text { Fichier } & \text { RSL } & \text { HK } & \text { Optimal } & \text{Erreur relative RSL (en \%)} & \text{ Erreur relative HK  }\\
-\hline \text{ bayg29 } & 2014 & 1620 & 1610 & 25.1 & 0.6\\
-\text{ bays29 } & 2313 & 2039 & 2020 & 14.5 & 0.9\\
-\text{ brazil58 }& 28380 & 25475 & 25395 & 11.8 & 0.3 \\
-\text{ dantzig42 }& 872 & 719 & 699 & 24.7 & 2.9\\
-\text{ fri26 }& 1102 & 937 & 937 & 17.6 & 0\\
-\text{ gr120 }& 8859 & 7363 & 6942 & 27.6 & 6.1\\
-\text{ gr17 }& 2210 & 2085 & 2085 & 6.0 & 0 \\
-\text{ gr21 }& 2998 & 2707 & 2707 & 10.7 & 0 \\
-\text{ gr24 }& 1571 & 1272 & 1272 & 23.5 & 0 \\
-\text{ gr48 }& 6450 & 5226 & 5046 & 27.8 & 3.5\\
-\text{ hk48 }& 13939 & 11525  & 11461 & 21.6 & 0.6\\
-\text{ pa561 } & 3875 & 3215 & 2763 & 40.2 & 16.4\\
-\text{ swiss42 } & 1591 & 1273 & 1273 & 25.0 & 0\\
+&\begin{array}{cc}
+\hline \hline \text { Fichier } & \text { Tournée minimale } & \text{ Score original } & \text{ Score reconstruit }\\
+\hline \text{ Abstract light painting  } & 1.23 * 10^7 & 48293 & 48293 \\
+\text{ Alaska railroad } & 7.68 * 10^6 & 30070 & 30070 \\
+\text{ Blue hour Paris  }& 3.95 * 10^6 & 25475 & 25395  \\
+\text{ Lower Kananaskis lake }& 4.22 * 10^6 & 16575 & 16575 \\
+\text{ Marlet 2 radio board }& 8.86 * 10^6 & 34757 & 34757 \\
+\text{ Nikos cat }& 3.04 * 10^6 & 11908 & 11908 \\
+\text{ Pizza food wallpaper }& 5.04 * 10^6 & 19769 & 19769  \\
+\text{ The enchanted garden }& 1.99 * 10^7 & 78095 & 78095  \\
+\text{ Tokyo skytree aerial }& 1.36 * 10^7 & 53372 & 53372  \\
 \hline
 \end{array}
 \end{aligned}$"
 
-# ╔═╡ 68108499-4e9d-4f3a-b1e8-854cb6f58807
-md"On peut réobtenir ces résultats avec le script *main4.jl*. Les meilleurs paramètres trouvés pour l'algorithme HK sont donnés dans le dictionnaire *dict_args_hk*, tandis qu'on réexécute la fonction *min_rsl* pour chaque instance (temps de calculs assez faible comparé aux temps de calculs de HK). Attention, il ne prend que 2 minutes à exécuter sans le fichier pa561, mais prend 40 minutes avec (on a un nombre d'itérations maximal dans l'algorithme HK assez élevé pour la taille du graphe). On a ainsi ajouté une variable booléenne calcul\_pa561 qu'on peut fixer à false si on veut obtenir tous les autres résultats rapidement."
+# ╔═╡ a9b98776-5e37-4925-8bd4-c667bd20d8a7
+md"Tous ces résultats peuvent être réobtenus avec notre script *main5.jl*. Celle-ci s'exécute en un peu moins de 10 minutes, un temps principalement dû à notre fonction *create_graph* qui s'exécute en à peu près 45 secondes pour des graphes complets de 600 noeuds. Notre fonction de Held et Karp s'exécute elle en entre 4 et 20 secondes par graphe."
 
-# ╔═╡ d868dfe4-d90d-4108-b359-d6f5a7b1bffb
-md"On obtient des bons résultats sur la plupart des graphes. Sur les plus petits, on obtient des tournées très proches de la tournée optimale voire optimale dans quelques cas. On remarque néanmoins que sur les plus gros graphes comme pa561 et gr120, on obtient des résultats plus éloignés de la valeur optimale. Cela est en partie dû aux temps de calcul de nos algorithmes qui nous ont empêché d'utiliser la fonction *test_hk* sur tous les noeuds ou avec des taux d'apprentissage faibles ou des nombres d'itérations élevés "
+# ╔═╡ 068be080-b311-4a5d-af1d-e9cec2a2eda6
+md"On affiche enfin ci-dessous les images originales (sur la gauche) et les images reconstruites (sur la droite). On utilise les fichiers locaux, il est donc nécessaire de faire tourner notre script *main5.jl* pour que la fin de ce notebook s'affiche correctement."
+
+# ╔═╡ 7c089bc5-9252-469a-80cd-c669285b3c31
+md"""
+$(LocalResource(joinpath(path_orig, "abstract-light-painting.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "abstract-light-painting.png"), :width => 300.))
+"""
+
+# ╔═╡ d422fdde-2ee4-488c-995d-9a1e39c0f951
+md"""
+$(LocalResource(joinpath(path_orig, "alaska-railroad.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "alaska-railroad.png"), :width => 300.))
+"""
+
+# ╔═╡ 5b914d81-49e2-4477-8667-2a6648656ff5
+md"""
+$(LocalResource(joinpath(path_orig, "blue-hour-paris.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "blue-hour-paris.png"), :width => 300.))
+"""
+
+# ╔═╡ 56e929cd-5188-4aa3-9bc0-0dc93927ad51
+md"""
+$(LocalResource(joinpath(path_orig, "lower-kananaskis-lake.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "lower-kananaskis-lake.png"), :width => 300.))
+"""
+
+# ╔═╡ 8943125d-233d-439f-8641-5028ce556fb1
+md"""
+$(LocalResource(joinpath(path_orig, "marlet2-radio-board.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "marlet2-radio-board.png"), :width => 300.))
+"""
+
+# ╔═╡ 8ecc5eb1-b4ab-4e46-8d8c-07ad03dc916b
+md"""
+$(LocalResource(joinpath(path_orig, "nikos-cat.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "nikos-cat.png"), :width => 300.))
+"""
 
 # ╔═╡ c4d066fc-efc9-484b-bcfb-bd229df4baec
+md"""
+$(LocalResource(joinpath(path_orig, "pizza-food-wallpaper.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "pizza-food-wallpaper.png"), :width => 300.))
+"""
 
+# ╔═╡ c8840e13-f40b-4322-afe5-fad93eef5f06
+md"""
+$(LocalResource(joinpath(path_orig, "the-enchanted-garden.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "the-enchanted-garden.png"), :width => 300.))
+"""
 
-# ╔═╡ 28b49375-14cd-4db7-bc8b-7e28cd1d66f7
-md"On représente ci-dessous les meilleures tournées obtenues sur les graphes sur lesquels cela est possible"
-
-# ╔═╡ fa8ff99f-75db-4f22-9499-04e5621533ac
-begin
-	#bayg29 = create_graph(joinpath(path_instances, "bayg29.tsp"))
-	tour_opti_bayg29, poids_bayg29 = heldkarp(bayg29, 16, 0.01, 10000, false)
-	tour_opti_bayg29_rsl,_,_ = min_rsl(bayg29)
-	plot_graph(nodes(tour_opti_bayg29), edges(tour_opti_bayg29))
-end
-
-# ╔═╡ 007dc7f5-ca8f-46a6-99f9-7c1c51131cd0
-plot_graph(nodes(tour_opti_bayg29_rsl), edges(tour_opti_bayg29_rsl))
-
-
-# ╔═╡ b81cf618-021e-459a-9ffe-6d88bf29fd36
-begin
-	#bays29 = create_graph(joinpath(path_instances, "bayg29.tsp"))
-	tour_opti_bays29, poids_bays29 = heldkarp(bays29, 13, 0.01, 10000, false)
-	tour_opti_bays29_rsl,_,_ = min_rsl(bays29)
-
-	plot_graph(nodes(tour_opti_bayg29), edges(tour_opti_bayg29))
-end
-
-# ╔═╡ f1e6608f-17ee-44c4-b8fa-bebe469e11ad
-plot_graph(nodes(tour_opti_bays29_rsl), edges(tour_opti_bays29_rsl))
-
-
-# ╔═╡ 49e89ce2-42fe-4a60-b9b5-091bcd952611
-begin
-	dantzig42 = create_graph(joinpath(path_instances, "dantzig42.tsp"))
-	tour_opti_dantzig42, poids_dantzig42 = heldkarp(dantzig42, 35, 0.1, 1000, false)
-	tour_opti_dantzig42_rsl,_,_ = min_rsl(dantzig42)
-	plot_graph(nodes(tour_opti_dantzig42), edges(tour_opti_dantzig42))
-end
-
-# ╔═╡ fe09ea71-1ec2-42b1-9b7c-1a93d8bf68de
-plot_graph(nodes(tour_opti_dantzig42_rsl), edges(tour_opti_dantzig42_rsl))
-
-
-# ╔═╡ 13a80dc6-9701-4e5f-95b7-ebf1fe53144d
-begin
-	gr120 = create_graph(joinpath(path_instances, "gr120.tsp"))
-	tour_opti_gr120, poids_gr120 = heldkarp(gr120, 61, 1., 1000, false)
-	tour_opti_gr120_rsl,_,_ = min_rsl(gr120)
-
-	plot_graph(nodes(tour_opti_gr120), edges(tour_opti_gr120))
-end
-
-# ╔═╡ 3bfb840b-1671-4c43-b074-276964589c31
-plot_graph(nodes(tour_opti_gr120_rsl), edges(tour_opti_gr120_rsl))
-
+# ╔═╡ a68c8f16-5389-4744-b8b1-50cb19664107
+md"""
+$(LocalResource(joinpath(path_orig, "tokyo-skytree-aerial.png"), :width => 300.))
+$(LocalResource(joinpath(path_recons, "tokyo-skytree-aerial.png"), :width => 300.))
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+ImageView = "86fae568-95e7-573e-a6b2-d8a6b900c9ef"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
+FileIO = "~1.11.2"
+ImageMagick = "~1.2.2"
+ImageView = "~0.10.14"
+Images = "~0.24.1"
 Plots = "~1.22.4"
 PlutoUI = "~0.7.14"
 """
@@ -231,6 +169,18 @@ PlutoUI = "~0.7.14"
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
+
+[[ATK_jll]]
+deps = ["Artifacts", "Glib_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "58c36d8a1beeb12d63921bcfaa674baf30a1140e"
+uuid = "7b86fcea-f67b-53e1-809c-8f1719c154e8"
+version = "2.36.1+0"
+
+[[AbstractFFTs]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "485ee0867925449198280d4af84bdb46a2a404d0"
+uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
+version = "1.0.1"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -241,8 +191,26 @@ version = "3.3.1"
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 
+[[ArrayInterface]]
+deps = ["Compat", "IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
+git-tree-sha1 = "265b06e2b1f6a216e0e8f183d28e4d354eab3220"
+uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+version = "3.2.1"
+
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[AxisAlgorithms]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
+git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
+uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+version = "1.0.1"
+
+[[AxisArrays]]
+deps = ["Dates", "IntervalSets", "IterTools", "RangeArrays"]
+git-tree-sha1 = "d127d5e4d86c7680b20c35d40b503c74b9a39b5e"
+uuid = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+version = "0.4.4"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -253,11 +221,46 @@ git-tree-sha1 = "19a35467a82e236ff51bc17a3a44b69ef35185a2"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.8+0"
 
+[[CEnum]]
+git-tree-sha1 = "215a9aa4a1f23fbd05b92769fdd62559488d70e9"
+uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+version = "0.4.1"
+
+[[Cairo]]
+deps = ["Cairo_jll", "Colors", "Glib_jll", "Graphics", "Libdl", "Pango_jll"]
+git-tree-sha1 = "d0b3f8b4ad16cb0a2988c6788646a5e6a17b6b1b"
+uuid = "159f3aea-2a34-519c-b102-8c37f9878175"
+version = "1.0.5"
+
 [[Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "f2202b55d816427cd385a9a4f3ffb226bee80f99"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+0"
+
+[[Calculus]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
+uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
+version = "0.5.1"
+
+[[CatIndices]]
+deps = ["CustomUnitRanges", "OffsetArrays"]
+git-tree-sha1 = "a0f80a09780eed9b1d106a1bf62041c2efc995bc"
+uuid = "aafaddc9-749c-510e-ac4f-586e18779b91"
+version = "0.2.2"
+
+[[ChainRulesCore]]
+deps = ["Compat", "LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "f885e7e7c124f8c92650d61b9477b9ac2ee607dd"
+uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+version = "1.11.1"
+
+[[ChangesOfVariables]]
+deps = ["LinearAlgebra", "Test"]
+git-tree-sha1 = "9a1d594397670492219635b35a3d830b04730d62"
+uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
+version = "0.1.1"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random"]
@@ -270,6 +273,12 @@ deps = ["FixedPointNumbers", "Random"]
 git-tree-sha1 = "024fe24d83e4a5bf5fc80501a314ce0d1aa35597"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 version = "0.11.0"
+
+[[ColorVectorSpace]]
+deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "SpecialFunctions", "Statistics", "TensorCore"]
+git-tree-sha1 = "3f1f500312161f1ae067abe07d13b40f78f32e07"
+uuid = "c3611d14-8923-5661-9e6a-0046d554d3a4"
+version = "0.9.8"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
@@ -287,11 +296,27 @@ version = "3.39.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 
+[[ComputationalResources]]
+git-tree-sha1 = "52cb3ec90e8a8bea0e62e275ba577ad0f74821f7"
+uuid = "ed09eef8-17a6-5b46-8889-db040fac31e3"
+version = "0.3.2"
+
 [[Contour]]
 deps = ["StaticArrays"]
 git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.5.7"
+
+[[CoordinateTransformations]]
+deps = ["LinearAlgebra", "StaticArrays"]
+git-tree-sha1 = "681ea870b918e7cff7111da58791d7f718067a19"
+uuid = "150eb455-5306-5404-9cee-2592286d6298"
+version = "0.6.2"
+
+[[CustomUnitRanges]]
+git-tree-sha1 = "1a3f97f907e6dd8983b744d2642651bb162a3f7a"
+uuid = "dc8bdbbb-1ca9-579f-8c36-e416f6a65cce"
+version = "1.0.2"
 
 [[DataAPI]]
 git-tree-sha1 = "cc70b17275652eb47bc9e5f81635981f13cea5c8"
@@ -313,23 +338,53 @@ version = "1.0.0"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[Dbus_jll]]
+deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "97f1325c10bd02b1cc1882e9c2bf6407ba630ace"
+uuid = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
+version = "1.12.16+3"
+
 [[DelimitedFiles]]
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+
+[[Distances]]
+deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
+git-tree-sha1 = "3258d0659f812acde79e8a74b11f17ac06d0ca04"
+uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+version = "0.10.7"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
+[[DocStringExtensions]]
+deps = ["LibGit2"]
+git-tree-sha1 = "b19534d1895d702889b219c382a6e18010797f0b"
+uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+version = "0.8.6"
+
 [[Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+
+[[DualNumbers]]
+deps = ["Calculus", "NaNMath", "SpecialFunctions"]
+git-tree-sha1 = "84f04fe68a3176a583b864e492578b9466d87f1e"
+uuid = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
+version = "0.6.6"
 
 [[EarCut_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "3f3a2501fa7236e9b911e0f7a588c657e822bb6d"
 uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
 version = "2.2.3+0"
+
+[[EllipsisNotation]]
+deps = ["ArrayInterface"]
+git-tree-sha1 = "3fe985505b4b667e1ae303c9ca64d181f09d5c05"
+uuid = "da5c29d0-fa7d-589e-88eb-ea29b0a81949"
+version = "1.1.3"
 
 [[Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -348,6 +403,30 @@ deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers",
 git-tree-sha1 = "d8a578692e3077ac998b50c0217dfd67f21d1e5f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.0+0"
+
+[[FFTViews]]
+deps = ["CustomUnitRanges", "FFTW"]
+git-tree-sha1 = "cbdf14d1e8c7c8aacbe8b19862e0179fd08321c2"
+uuid = "4f61f5a4-77b1-5117-aa51-3ab5ef4ef0cd"
+version = "0.3.2"
+
+[[FFTW]]
+deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
+git-tree-sha1 = "463cb335fa22c4ebacfd1faba5fde14edb80d96c"
+uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+version = "1.4.5"
+
+[[FFTW_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
+uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
+version = "3.3.10+0"
+
+[[FileIO]]
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "2db648b6712831ecb333eae76dbfd1c156ca13bb"
+uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+version = "1.11.2"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -397,6 +476,12 @@ git-tree-sha1 = "4c8c0719591e108a83fb933ac39e32731c7850ff"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
 version = "0.60.0+0"
 
+[[GTK3_jll]]
+deps = ["ATK_jll", "Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl", "Libepoxy_jll", "Pango_jll", "Pkg", "Wayland_jll", "Xorg_libX11_jll", "Xorg_libXcomposite_jll", "Xorg_libXcursor_jll", "Xorg_libXdamage_jll", "Xorg_libXext_jll", "Xorg_libXfixes_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "Xorg_libXrender_jll", "at_spi2_atk_jll", "gdk_pixbuf_jll", "iso_codes_jll", "xkbcommon_jll"]
+git-tree-sha1 = "f2922cb0105ba076b560e3922910f8e3749aa91a"
+uuid = "77ec8976-b24b-556a-a1bf-49a033a670a6"
+version = "3.24.30+0"
+
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
 git-tree-sha1 = "58bcdf5ebc057b085e58d95c138725628dd7453c"
@@ -415,6 +500,12 @@ git-tree-sha1 = "74ef6288d071f58033d54fd6708d4bc23a8b8972"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
 version = "2.68.3+1"
 
+[[Graphics]]
+deps = ["Colors", "LinearAlgebra", "NaNMath"]
+git-tree-sha1 = "1c5a84319923bea76fa145d49e93aa4394c73fc2"
+uuid = "a2bd30eb-e257-5431-a919-1863eab51364"
+version = "1.1.1"
+
 [[Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "344bf40dcab1073aca04aa0df4fb092f920e4011"
@@ -425,6 +516,18 @@ version = "1.3.14+0"
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
 uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
+
+[[Gtk]]
+deps = ["Cairo", "Cairo_jll", "Dates", "GTK3_jll", "Glib_jll", "Graphics", "Libdl", "Pkg", "Reexport", "Serialization", "Test", "Xorg_xkeyboard_config_jll", "adwaita_icon_theme_jll", "gdk_pixbuf_jll", "hicolor_icon_theme_jll"]
+git-tree-sha1 = "d679fc90e75984e7b8eb25702eff7cf4718a9c10"
+uuid = "4c0ca9eb-093a-5379-98c5-f87ac0bbbf44"
+version = "1.1.9"
+
+[[GtkReactive]]
+deps = ["Cairo", "Colors", "Dates", "FixedPointNumbers", "Graphics", "Gtk", "IntervalSets", "Reactive", "Reexport", "RoundingIntegers"]
+git-tree-sha1 = "ccb07a5fa45e43ac83b6795c9e218d6a802c93d8"
+uuid = "27996c0f-39cd-5cc1-a27a-05f136f946b6"
+version = "1.0.6"
 
 [[HTTP]]
 deps = ["Base64", "Dates", "IniFile", "Logging", "MbedTLS", "NetworkOptions", "Sockets", "URIs"]
@@ -449,15 +552,161 @@ git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
 uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
 version = "0.2.2"
 
+[[IdentityRanges]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "be8fcd695c4da16a1d6d0cd213cb88090a150e3b"
+uuid = "bbac6d45-d8f3-5730-bfe4-7a449cd117ca"
+version = "0.3.1"
+
+[[IfElse]]
+git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
+uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
+version = "0.1.1"
+
+[[ImageAxes]]
+deps = ["AxisArrays", "ImageCore", "Reexport", "SimpleTraits"]
+git-tree-sha1 = "794ad1d922c432082bc1aaa9fa8ffbd1fe74e621"
+uuid = "2803e5a7-5153-5ecf-9a86-9b4c37f5f5ac"
+version = "0.6.9"
+
+[[ImageContrastAdjustment]]
+deps = ["ColorVectorSpace", "ImageCore", "ImageTransformations", "Parameters"]
+git-tree-sha1 = "2e6084db6cccab11fe0bc3e4130bd3d117092ed9"
+uuid = "f332f351-ec65-5f6a-b3d1-319c6670881a"
+version = "0.3.7"
+
+[[ImageCore]]
+deps = ["AbstractFFTs", "Colors", "FixedPointNumbers", "Graphics", "MappedArrays", "MosaicViews", "OffsetArrays", "PaddedViews", "Reexport"]
+git-tree-sha1 = "db645f20b59f060d8cfae696bc9538d13fd86416"
+uuid = "a09fc81d-aa75-5fe9-8630-4744c3626534"
+version = "0.8.22"
+
+[[ImageDistances]]
+deps = ["ColorVectorSpace", "Distances", "ImageCore", "ImageMorphology", "LinearAlgebra", "Statistics"]
+git-tree-sha1 = "6378c34a3c3a216235210d19b9f495ecfff2f85f"
+uuid = "51556ac3-7006-55f5-8cb3-34580c88182d"
+version = "0.2.13"
+
+[[ImageFiltering]]
+deps = ["CatIndices", "ColorVectorSpace", "ComputationalResources", "DataStructures", "FFTViews", "FFTW", "ImageCore", "LinearAlgebra", "OffsetArrays", "Requires", "SparseArrays", "StaticArrays", "Statistics", "TiledIteration"]
+git-tree-sha1 = "bf96839133212d3eff4a1c3a80c57abc7cfbf0ce"
+uuid = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
+version = "0.6.21"
+
+[[ImageIO]]
+deps = ["FileIO", "Netpbm", "OpenEXR", "PNGFiles", "TiffImages", "UUIDs"]
+git-tree-sha1 = "a2951c93684551467265e0e32b577914f69532be"
+uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
+version = "0.5.9"
+
+[[ImageMagick]]
+deps = ["FileIO", "ImageCore", "ImageMagick_jll", "InteractiveUtils"]
+git-tree-sha1 = "ca8d917903e7a1126b6583a097c5cb7a0bedeac1"
+uuid = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+version = "1.2.2"
+
+[[ImageMagick_jll]]
+deps = ["JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Zlib_jll", "libpng_jll"]
+git-tree-sha1 = "1c0a2295cca535fabaf2029062912591e9b61987"
+uuid = "c73af94c-d91f-53ed-93a7-00f77d67a9d7"
+version = "6.9.10-12+3"
+
+[[ImageMetadata]]
+deps = ["AxisArrays", "ColorVectorSpace", "ImageAxes", "ImageCore", "IndirectArrays"]
+git-tree-sha1 = "ae76038347dc4edcdb06b541595268fca65b6a42"
+uuid = "bc367c6b-8a6b-528e-b4bd-a4b897500b49"
+version = "0.9.5"
+
+[[ImageMorphology]]
+deps = ["ColorVectorSpace", "ImageCore", "LinearAlgebra", "TiledIteration"]
+git-tree-sha1 = "68e7cbcd7dfaa3c2f74b0a8ab3066f5de8f2b71d"
+uuid = "787d08f9-d448-5407-9aad-5290dd7ab264"
+version = "0.2.11"
+
+[[ImageQualityIndexes]]
+deps = ["ColorVectorSpace", "ImageCore", "ImageDistances", "ImageFiltering", "OffsetArrays", "Statistics"]
+git-tree-sha1 = "1198f85fa2481a3bb94bf937495ba1916f12b533"
+uuid = "2996bd0c-7a13-11e9-2da2-2f5ce47296a9"
+version = "0.2.2"
+
+[[ImageShow]]
+deps = ["Base64", "FileIO", "ImageCore", "OffsetArrays", "Requires", "StackViews"]
+git-tree-sha1 = "832abfd709fa436a562db47fd8e81377f72b01f9"
+uuid = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
+version = "0.3.1"
+
+[[ImageTransformations]]
+deps = ["AxisAlgorithms", "ColorVectorSpace", "CoordinateTransformations", "IdentityRanges", "ImageCore", "Interpolations", "OffsetArrays", "Rotations", "StaticArrays"]
+git-tree-sha1 = "e4cc551e4295a5c96545bb3083058c24b78d4cf0"
+uuid = "02fcd773-0e25-5acc-982a-7f6622650795"
+version = "0.8.13"
+
+[[ImageView]]
+deps = ["AxisArrays", "Cairo", "Graphics", "Gtk", "GtkReactive", "Images", "RoundingIntegers", "StatsBase"]
+git-tree-sha1 = "9425036a38890aa6eff9a7da1cad81d800abefa6"
+uuid = "86fae568-95e7-573e-a6b2-d8a6b900c9ef"
+version = "0.10.14"
+
+[[Images]]
+deps = ["AxisArrays", "Base64", "ColorVectorSpace", "FileIO", "Graphics", "ImageAxes", "ImageContrastAdjustment", "ImageCore", "ImageDistances", "ImageFiltering", "ImageIO", "ImageMagick", "ImageMetadata", "ImageMorphology", "ImageQualityIndexes", "ImageShow", "ImageTransformations", "IndirectArrays", "OffsetArrays", "Random", "Reexport", "SparseArrays", "StaticArrays", "Statistics", "StatsBase", "TiledIteration"]
+git-tree-sha1 = "8b714d5e11c91a0d945717430ec20f9251af4bd2"
+uuid = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+version = "0.24.1"
+
+[[Imath_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "87f7662e03a649cffa2e05bf19c303e168732d3e"
+uuid = "905a6f67-0a94-5f89-b386-d35d92009cd1"
+version = "3.1.2+0"
+
+[[IndirectArrays]]
+git-tree-sha1 = "c2a145a145dc03a7620af1444e0264ef907bd44f"
+uuid = "9b13fd28-a010-5f03-acff-a1bbcff69959"
+version = "0.5.1"
+
+[[Inflate]]
+git-tree-sha1 = "f5fc07d4e706b84f72d54eedcc1c13d92fb0871c"
+uuid = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
+version = "0.1.2"
+
 [[IniFile]]
 deps = ["Test"]
 git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.0"
 
+[[IntelOpenMP_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "d979e54b71da82f3a65b62553da4fc3d18c9004c"
+uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
+version = "2018.0.3+2"
+
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[Interpolations]]
+deps = ["AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
+git-tree-sha1 = "61aa005707ea2cebf47c8d780da8dc9bc4e0c512"
+uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+version = "0.13.4"
+
+[[IntervalSets]]
+deps = ["Dates", "EllipsisNotation", "Statistics"]
+git-tree-sha1 = "3cc368af3f110a767ac786560045dceddfc16758"
+uuid = "8197267c-284f-5f27-9208-e0e47529a953"
+version = "0.5.3"
+
+[[InverseFunctions]]
+deps = ["Test"]
+git-tree-sha1 = "a7254c0acd8e62f1ac75ad24d5db43f5f19f3c65"
+uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
+version = "0.1.2"
+
+[[IrrationalConstants]]
+git-tree-sha1 = "7fd44fd4ff43fc60815f8e764c0f352b83c49151"
+uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
+version = "0.1.1"
 
 [[IterTools]]
 git-tree-sha1 = "05110a2ab1fc5f932622ffea2a003221f4782c18"
@@ -510,6 +759,10 @@ git-tree-sha1 = "a4b12a1bd2ebade87891ab7e36fdbce582301a92"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.15.6"
 
+[[LazyArtifacts]]
+deps = ["Artifacts", "Pkg"]
+uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
+
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
@@ -528,6 +781,12 @@ uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
 
 [[Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[Libepoxy_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libX11_jll"]
+git-tree-sha1 = "ae76616c0e0cbcbedc68d0121fe409598efc0b05"
+uuid = "42c93a91-0102-5b3f-8f9d-e41de60ac950"
+version = "1.5.8+0"
 
 [[Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -581,14 +840,31 @@ version = "2.36.0+0"
 deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
+[[LogExpFunctions]]
+deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
+git-tree-sha1 = "be9eef9f9d78cecb6f262f3c10da151a6c5ab827"
+uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
+version = "0.3.5"
+
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[MKL_jll]]
+deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
+git-tree-sha1 = "5455aef09b40e5020e1520f551fa3135040d4ed0"
+uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
+version = "2021.1.1+2"
 
 [[MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "5a5bc6bf062f0f95e62d0fe0a2d99699fed82dd9"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.8"
+
+[[MappedArrays]]
+git-tree-sha1 = "e8b359ef06ec72e8c030463fe02efe5527ee5142"
+uuid = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
+version = "0.4.1"
 
 [[Markdown]]
 deps = ["Base64"]
@@ -618,6 +894,12 @@ version = "1.0.2"
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
+[[MosaicViews]]
+deps = ["MappedArrays", "OffsetArrays", "PaddedViews", "StackViews"]
+git-tree-sha1 = "b34e3bc3ca7c94914418637cb10cc4d1d80d877d"
+uuid = "e94cdb99-869f-56ef-bcf0-1ae2bcbe0389"
+version = "0.3.3"
+
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
@@ -626,8 +908,20 @@ git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "0.3.5"
 
+[[Netpbm]]
+deps = ["ColorVectorSpace", "FileIO", "ImageCore"]
+git-tree-sha1 = "09589171688f0039f13ebe0fdcc7288f50228b52"
+uuid = "f09324ee-3d7c-5217-9330-fc30815ba969"
+version = "1.0.1"
+
 [[NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+
+[[OffsetArrays]]
+deps = ["Adapt"]
+git-tree-sha1 = "043017e0bdeff61cfbb7afeb558ab29536bbb5ed"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.10.8"
 
 [[Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -635,11 +929,33 @@ git-tree-sha1 = "7937eda4681660b4d6aeeecc2f7e1c81c8ee4e2f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+0"
 
+[[OpenEXR]]
+deps = ["Colors", "FileIO", "OpenEXR_jll"]
+git-tree-sha1 = "327f53360fdb54df7ecd01e96ef1983536d1e633"
+uuid = "52e1d378-f018-4a11-a4be-720524705ac7"
+version = "0.3.2"
+
+[[OpenEXR_jll]]
+deps = ["Artifacts", "Imath_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
+git-tree-sha1 = "923319661e9a22712f24596ce81c54fc0366f304"
+uuid = "18a262bb-aa17-5467-a713-aee519bc75cb"
+version = "3.1.1+0"
+
+[[OpenLibm_jll]]
+deps = ["Artifacts", "Libdl"]
+uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+
 [[OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "15003dcb7d8db3c6c857fda14891a539a8f2705a"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "1.1.10+0"
+
+[[OpenSpecFun_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
+uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
+version = "0.5.5+0"
 
 [[Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -658,6 +974,30 @@ git-tree-sha1 = "b2a7af664e098055a7529ad1a900ded962bca488"
 uuid = "2f80f16e-611a-54ab-bc61-aa92de5b98fc"
 version = "8.44.0+0"
 
+[[PNGFiles]]
+deps = ["Base64", "CEnum", "ImageCore", "IndirectArrays", "OffsetArrays", "libpng_jll"]
+git-tree-sha1 = "6d105d40e30b635cfed9d52ec29cf456e27d38f8"
+uuid = "f57f5aa1-a3ce-4bc8-8ab9-96f992907883"
+version = "0.3.12"
+
+[[PaddedViews]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "646eed6f6a5d8df6708f15ea7e02a7a2c4fe4800"
+uuid = "5432bcbf-9aad-5242-b902-cca2824c8663"
+version = "0.5.10"
+
+[[Pango_jll]]
+deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "9bc1871464b12ed19297fbc56c4fb4ba84988b0d"
+uuid = "36c8627f-9965-5494-a995-c6b170f724f3"
+version = "1.47.0+0"
+
+[[Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
+
 [[Parsers]]
 deps = ["Dates"]
 git-tree-sha1 = "a8709b968a1ea6abc2dc1967cb1db6ac9a00dfb6"
@@ -673,6 +1013,12 @@ version = "0.40.1+0"
 [[Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+
+[[PkgVersion]]
+deps = ["Pkg"]
+git-tree-sha1 = "a7a7e1a88853564e551e4eba8650f8c38df79b37"
+uuid = "eebad327-c553-4316-9ea0-9fa01ccd7688"
+version = "0.1.1"
 
 [[PlotThemes]]
 deps = ["PlotUtils", "Requires", "Statistics"]
@@ -708,11 +1054,23 @@ version = "1.2.2"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
+[[ProgressMeter]]
+deps = ["Distributed", "Printf"]
+git-tree-sha1 = "afadeba63d90ff223a6a48d2009434ecee2ec9e8"
+uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
+version = "1.7.1"
+
 [[Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
 git-tree-sha1 = "ad368663a5e20dbb8d6dc2fddeefe4dae0781ae8"
 uuid = "ea2cea3b-5b76-57ae-a6ef-0a8af62496e1"
 version = "5.15.3+0"
+
+[[Quaternions]]
+deps = ["DualNumbers", "LinearAlgebra"]
+git-tree-sha1 = "adf644ef95a5e26c8774890a509a55b7791a139f"
+uuid = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0"
+version = "0.4.2"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -721,6 +1079,23 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[Random]]
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[RangeArrays]]
+git-tree-sha1 = "b9039e93773ddcfc828f12aadf7115b4b4d225f5"
+uuid = "b3c3ace0-ae52-54e7-9d0b-2c1406fd6b9d"
+version = "0.3.2"
+
+[[Ratios]]
+deps = ["Requires"]
+git-tree-sha1 = "01d341f502250e81f6fec0afe662aa861392a3aa"
+uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+version = "0.4.2"
+
+[[Reactive]]
+deps = ["DataStructures", "Distributed", "Test"]
+git-tree-sha1 = "5862d915387ebb954016f50a88e34f79a9e5fcd2"
+uuid = "a223df75-4e93-5b7c-acf9-bdd599c0f4de"
+version = "0.8.3"
 
 [[RecipesBase]]
 git-tree-sha1 = "44a75aa7a527910ee3d1751d1f0e4148698add9e"
@@ -744,6 +1119,17 @@ git-tree-sha1 = "4036a3bd08ac7e968e27c203d45f5fff15020621"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.1.3"
 
+[[Rotations]]
+deps = ["LinearAlgebra", "Quaternions", "Random", "StaticArrays", "Statistics"]
+git-tree-sha1 = "dbf5f991130238f10abbf4f2d255fb2837943c43"
+uuid = "6038ab10-8711-5258-84ad-4b1120ba62dc"
+version = "1.1.0"
+
+[[RoundingIntegers]]
+git-tree-sha1 = "1ef7c017f520f5f1bf059a470dd0c3e001402923"
+uuid = "d5f540fe-1c90-5db3-b776-2e2f362d9394"
+version = "1.0.0"
+
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -766,6 +1152,12 @@ git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
 uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "1.0.3"
 
+[[SimpleTraits]]
+deps = ["InteractiveUtils", "MacroTools"]
+git-tree-sha1 = "5d7e3f4e11935503d3ecaf7186eac40602e7d231"
+uuid = "699a6c99-e7fa-54fc-8d76-47d257e15c1d"
+version = "0.9.4"
+
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
@@ -778,6 +1170,24 @@ version = "1.0.1"
 [[SparseArrays]]
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[SpecialFunctions]]
+deps = ["ChainRulesCore", "IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
+git-tree-sha1 = "e08890d19787ec25029113e88c34ec20cac1c91e"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "2.0.0"
+
+[[StackViews]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "46e589465204cd0c08b4bd97385e4fa79a0c770c"
+uuid = "cae243ae-269e-4f55-b966-ac2d0dc13c15"
+version = "0.1.1"
+
+[[Static]]
+deps = ["IfElse"]
+git-tree-sha1 = "e7bc80dc93f50857a5d1e3c8121495852f407e6a"
+uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+version = "0.4.0"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
@@ -826,9 +1236,27 @@ version = "1.6.0"
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 
+[[TensorCore]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "1feb45f88d133a655e001435632f019a9a1bcdb6"
+uuid = "62fd8b95-f654-4bbd-a8a5-9c27f68ccd50"
+version = "0.1.1"
+
 [[Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[[TiffImages]]
+deps = ["ColorTypes", "DataStructures", "DocStringExtensions", "FileIO", "FixedPointNumbers", "IndirectArrays", "Inflate", "OffsetArrays", "PkgVersion", "ProgressMeter", "UUIDs"]
+git-tree-sha1 = "c342ae2abf4902d65a0b0bf59b28506a6e17078a"
+uuid = "731e570b-9d59-4bfa-96dc-6df516fadf69"
+version = "0.5.2"
+
+[[TiledIteration]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "5683455224ba92ef59db72d10690690f4a8dc297"
+uuid = "06e1c1a7-607b-532d-9fad-de7d9aa2abac"
+version = "0.3.1"
 
 [[URIs]]
 git-tree-sha1 = "97bbe755a53fe859669cd907f2d96aee8d2c1355"
@@ -838,6 +1266,11 @@ version = "1.3.0"
 [[UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[[UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
 
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
@@ -853,6 +1286,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Wayland_jll"]
 git-tree-sha1 = "2839f1c1296940218e35df0bbb220f2a79686670"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.18.0+4"
+
+[[WoodburyMatrices]]
+deps = ["LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
+uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
+version = "0.5.5"
 
 [[XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -878,11 +1317,23 @@ git-tree-sha1 = "4e490d5c960c314f33885790ed410ff3a94ce67e"
 uuid = "0c0b7dd1-d40b-584c-a123-a41640f87eec"
 version = "1.0.9+4"
 
+[[Xorg_libXcomposite_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_libXfixes_jll"]
+git-tree-sha1 = "7c688ca9c957837539bbe1c53629bb871025e423"
+uuid = "3c9796d7-64a0-5134-86ad-79f8eb684845"
+version = "0.4.5+4"
+
 [[Xorg_libXcursor_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_libXfixes_jll", "Xorg_libXrender_jll"]
 git-tree-sha1 = "12e0eb3bc634fa2080c1c37fccf56f7c22989afd"
 uuid = "935fb764-8cf2-53bf-bb30-45bb1f8bf724"
 version = "1.2.0+4"
+
+[[Xorg_libXdamage_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_libXfixes_jll"]
+git-tree-sha1 = "fe4ffb2024ba3eddc862c6e1d70e2b070cd1c2bf"
+uuid = "0aeada51-83db-5f97-b67e-184615cfc6f6"
+version = "1.1.5+4"
 
 [[Xorg_libXdmcp_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -925,6 +1376,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_libX11_jll"]
 git-tree-sha1 = "19560f30fd49f4d4efbe7002a1037f8c43d43b96"
 uuid = "ea2f1a96-1ddc-540d-b46f-429655e07cfa"
 version = "0.9.10+4"
+
+[[Xorg_libXtst_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_libXext_jll", "Xorg_libXfixes_jll", "Xorg_libXi_jll"]
+git-tree-sha1 = "0c0a60851f44add2a64069ddf213e941c30ed93c"
+uuid = "b6f176f1-7aea-5357-ad67-1d3e565ea1c6"
+version = "1.2.3+4"
 
 [[Xorg_libpthread_stubs_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1002,6 +1459,42 @@ git-tree-sha1 = "cc4bf3fdde8b7e3e9fa0351bdeedba1cf3b7f6e6"
 uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
 version = "1.5.0+0"
 
+[[adwaita_icon_theme_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "hicolor_icon_theme_jll"]
+git-tree-sha1 = "37c9a36ccb876e02876c8a654f1b2e8c1b443a78"
+uuid = "b437f822-2cd6-5e08-a15c-8bac984d38ee"
+version = "3.33.92+5"
+
+[[at_spi2_atk_jll]]
+deps = ["ATK_jll", "Artifacts", "JLLWrappers", "Libdl", "Pkg", "XML2_jll", "Xorg_libX11_jll", "at_spi2_core_jll"]
+git-tree-sha1 = "f16ae690aca4761f33d2cb338ee9899e541f5eae"
+uuid = "de012916-1e3f-58c2-8f29-df3ef51d412d"
+version = "2.34.1+4"
+
+[[at_spi2_core_jll]]
+deps = ["Artifacts", "Dbus_jll", "Glib_jll", "JLLWrappers", "Libdl", "Pkg", "Xorg_libXtst_jll"]
+git-tree-sha1 = "d2d540cd145f2b2933614649c029d222fe125188"
+uuid = "0fc3237b-ac94-5853-b45c-d43d59a06200"
+version = "2.34.0+4"
+
+[[gdk_pixbuf_jll]]
+deps = ["Artifacts", "Glib_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Xorg_libX11_jll", "libpng_jll"]
+git-tree-sha1 = "0facfc4bfd873c21b83a053bbf182b9ef19c69d8"
+uuid = "da03df04-f53b-5353-a52f-6a8b0620ced0"
+version = "2.42.6+0"
+
+[[hicolor_icon_theme_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "b458a6f6fc2b1a8ca74ed63852e4eaf43fb9f5ea"
+uuid = "059c91fe-1bad-52ad-bddd-f7b78713c282"
+version = "0.17.0+3"
+
+[[iso_codes_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "5ee24c3ae30e006117ec2da5ea50f2ce457c019a"
+uuid = "bf975903-5238-5d20-8243-bc370bc1e7e5"
+version = "4.3.0+4"
+
 [[libass_jll]]
 deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
 git-tree-sha1 = "5982a94fcba20f02f42ace44b9894ee2b140fe47"
@@ -1054,10 +1547,8 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═3c04ef1e-26cf-11ec-269d-714e657e0a90
-# ╠═edb29e94-a3b5-42cf-bb38-a4bbe9753dd1
-# ╠═52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
-# ╟─ac10181c-501b-44b0-a0f9-5257d37329aa
+# ╟─3c04ef1e-26cf-11ec-269d-714e657e0a90
+# ╟─52c6ffc6-3ced-4465-95c8-c3ff979a5ff3
 # ╟─bd96c780-678d-459b-aa23-a166751da087
 # ╟─0c186ad3-5494-4fa5-9791-5c6a1fbc4fab
 # ╟─abc12fa3-0cdd-4c3f-8dc6-6fe41cde8ec9
@@ -1065,41 +1556,21 @@ version = "0.9.1+5"
 # ╟─8914a271-58db-45d0-a227-804ac9cdac5b
 # ╟─4c380476-c375-4da3-a58e-acdb303d3a76
 # ╟─f345a0a0-2342-4488-ac0a-7b3c4f5fe381
-# ╠═b64118ca-0d04-4c8c-b375-e267e162c7f6
+# ╟─b64118ca-0d04-4c8c-b375-e267e162c7f6
+# ╠═a5c01f24-ff88-4810-aabe-66c8d8957e78
 # ╟─ee2fe83f-3e55-4bf8-b2a5-706c53c9b5c5
 # ╟─69d54b10-0cc5-48b8-b3b3-6c53945c2e65
-# ╟─085fe42d-c57f-4bc6-8a63-72f48fc88e2a
+# ╟─283c79ec-cfd6-4008-9a23-add473ae1f27
 # ╟─a9b98776-5e37-4925-8bd4-c667bd20d8a7
 # ╟─068be080-b311-4a5d-af1d-e9cec2a2eda6
-# ╟─37195aed-5d39-44f7-a75f-92122ab7c7d3
-# ╟─6a46e8ce-5e73-4ab2-b47c-3003ee93da84
-# ╟─aa812e7a-15e4-492b-912d-b6139a1de7e4
-# ╠═ba9461a0-31ff-4974-82e6-ca02807c9c5d
-# ╠═6ff5dddf-9d43-485d-9fb0-c7d9183747d8
-# ╟─a8e36544-c43f-469b-80b6-e4a8fe801ff8
-# ╠═a520301b-2bc3-452f-aef9-1be9e10046f7
-# ╠═e3bf6e4a-4da9-4897-9c86-3863a1373031
-# ╟─018f5c9d-7d88-4081-9721-87944c5e90d0
 # ╟─7c089bc5-9252-469a-80cd-c669285b3c31
+# ╟─d422fdde-2ee4-488c-995d-9a1e39c0f951
+# ╟─5b914d81-49e2-4477-8667-2a6648656ff5
+# ╟─56e929cd-5188-4aa3-9bc0-0dc93927ad51
 # ╟─8943125d-233d-439f-8641-5028ce556fb1
-# ╟─60534fee-514d-4fcc-8555-2bd82dc1d130
-# ╠═c2a867c4-0d89-4117-a976-d32beac11e5a
-# ╠═26168326-e262-4d78-8db5-11da9f57c576
-# ╟─a83a9354-ef22-43bf-b741-99026fdff382
 # ╟─8ecc5eb1-b4ab-4e46-8d8c-07ad03dc916b
-# ╟─23557883-0c02-455d-aa38-a30619644f87
-# ╟─8f95be08-938d-48d3-a9ee-4ed3806ff8bc
-# ╟─68108499-4e9d-4f3a-b1e8-854cb6f58807
-# ╟─d868dfe4-d90d-4108-b359-d6f5a7b1bffb
 # ╟─c4d066fc-efc9-484b-bcfb-bd229df4baec
-# ╟─28b49375-14cd-4db7-bc8b-7e28cd1d66f7
-# ╠═fa8ff99f-75db-4f22-9499-04e5621533ac
-# ╠═007dc7f5-ca8f-46a6-99f9-7c1c51131cd0
-# ╠═b81cf618-021e-459a-9ffe-6d88bf29fd36
-# ╠═f1e6608f-17ee-44c4-b8fa-bebe469e11ad
-# ╠═49e89ce2-42fe-4a60-b9b5-091bcd952611
-# ╠═fe09ea71-1ec2-42b1-9b7c-1a93d8bf68de
-# ╠═13a80dc6-9701-4e5f-95b7-ebf1fe53144d
-# ╠═3bfb840b-1671-4c43-b074-276964589c31
+# ╟─c8840e13-f40b-4322-afe5-fad93eef5f06
+# ╟─a68c8f16-5389-4744-b8b1-50cb19664107
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
